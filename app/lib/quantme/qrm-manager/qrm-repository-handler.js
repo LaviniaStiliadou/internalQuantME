@@ -10,40 +10,100 @@
  */
 
 const config = require('../../framework-config');
+const log = require('../../log')('app:qrm-repository-handler');
 
 // following imports are needed for the isomorphic git library
 const isomorphic = require('isomorphic-git');
+const http = require('isomorphic-git/http/node');
 const fs = require('fs');
 const path = require('path');
-const http = require('isomorphic-git/http/node');
 
-// variables for specifying the repository to be cloned, the system path and the repository name
+// variables for specifying the repository to be cloned, the system path, the repository name and some dir specified later
 let qrmRepoWebPath;
 let qrmRepoLocalPath;
-const qrmRepoLocalName = 'Test-Name';
-
-const cloneurl = 'https://github.com/isomorphic-git/lightning-fs';
-const cloneurl2 = 'https://github.com/isomorphic-git/cors-proxy';
+let qrmRepoLocalName;
+let dir;
+let stateUrl;
 
 /**
- * Clone the QRM Repository defined by path, name and username
+ * Clone the QRM Repository defined by its web path, local path and file name
+ *
+ * @return {Promise} a state of the cloning
  */
 module.exports.cloneQRMRepository = async function() {
+  log.info('Cloning started');
   console.log('clone button pressed');
-  let dir;
   const currentDir = path.dirname(process.cwd());
   qrmRepoLocalPath = config.getQRMRepositoryLocalPath();
-  if (qrmRepoLocalPath === '') {
-    dir = path.join(currentDir, qrmRepoLocalName);
-    console.log('first case, path is undefined');
-    console.log(dir);
-  } else {
-    dir = path.join(currentDir, qrmRepoLocalName);
-    const dir2 = path.join(qrmRepoLocalPath, qrmRepoLocalName);
-    console.log('second case, path is defined');
-    console.log(dir2);
+  qrmRepoLocalName = config.getQRMRepositoryLocalName();
+  qrmRepoWebPath = config.getQRMRepositoryWebPath();
+
+  try {
+    stateUrl = checkRepoUrl(qrmRepoWebPath);
+  } catch (err) {
+    log.error('Url error: ', err);
+    throw err;
   }
-  isomorphic.clone({ fs, http, dir, url: cloneurl2 }).then(console.log);
-  console.log('cloning done!');
-  return null;
+
+  // if no filepath is specified the path in which this program runs is used
+  if (qrmRepoLocalPath === '' && stateUrl) {
+    dir = path.join(currentDir, qrmRepoLocalName);
+    isomorphic.clone({ fs, http, dir, url: qrmRepoWebPath }).then(console.log);
+    return true;
+  } else {
+
+    // if a path is specified check it and then clone with this path
+    try {
+      checkRepoLocalPath(qrmRepoLocalPath);
+    } catch (err) {
+      log.error('Path error: ', err);
+      throw err;
+    }
+    if (stateUrl) {
+      dir = path.join(qrmRepoLocalPath, qrmRepoLocalName);
+      isomorphic.clone({ fs, http, dir, url: qrmRepoWebPath }).then(console.log);
+      return true;
+    }
+    return false;
+  }
 };
+
+function checkRepoUrl(path) {
+
+  // check whether it is an actual url
+  let url;
+  try {
+    url = new URL(path);
+    console.log('url: ' + url);
+  } catch (err) {
+    throw 'Url seems to be incorrect or not an actual url \'' + path + '\'';
+  }
+
+  // check whether it starts with 'https://github.com/'
+  const substring = 'https://github.com/';
+  let correctSubstring = path.includes(substring);
+  if (correctSubstring === false) {
+    throw 'Url doesnt start with github.com';
+  } else {
+    return true;
+  }
+}
+
+function checkRepoLocalPath(path) {
+
+  // check whether the path is an actual path on the filesystem
+  fs.statSync(path, (err, stats) => {
+    if (err) {
+      log.error('Incorrect QRM Repository local path',err);
+      this.logEntry(err.message, 'ERROR');
+      throw 'The path entered as QRM Repository local path is not a path:\'' + path + '\'. ' + err + '\'. ' + 'Please enter a new path';
+    } else {
+      if (stats.isDirectory()) {
+        console.log('a correct path was entered');
+      } else {
+        log.error('Incorrect QRM Repository local path');
+        throw 'The path entered as QRM Repository local path is incorrect:\'' + qrmRepoLocalPath + '\'. ' + 'Please enter a new path';
+      }
+    }
+  });
+}

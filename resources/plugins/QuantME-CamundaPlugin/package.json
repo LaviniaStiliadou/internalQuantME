@@ -6,7 +6,7 @@
     "all": "run-s lint build",
     "build": "webpack --mode production",
     "dev": "webpack-dev-server --content-base=public --open",
-    "lint": "eslint .",
+    "lint": "eslint --ignore-path ../../../.eslintignore .",
     "start": "run-s dev"
   },
   "repository": {

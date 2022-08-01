@@ -150,7 +150,11 @@ export default class ConfigPlugin extends PureComponent {
 
   async cloneQRMRepository() {
     console.log('Cloning repository!');
-    await this.quantME.cloneRepository();
+    try {
+      await this.quantME.cloneQRMRepository();
+    } catch (error) {
+      throw 'Cloning error: ' + error;
+    }
   }
 
   render() {

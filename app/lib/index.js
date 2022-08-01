@@ -244,8 +244,13 @@ renderer.on('quantme:get-qrms', function(done) {
   done(null, getQRMs());
 });
 
-renderer.on('quantme:clone-repo', function(done) {
-  done(null, cloneQRMRepository());
+renderer.on('quantme:clone-repo', async function(done) {
+  try {
+    let cloningState = await cloneQRMRepository();
+    done(null, cloningState);
+  } catch (error) {
+    done(error);
+  }
 });
 
 renderer.on('quantme:update-qrms', async function(done) {

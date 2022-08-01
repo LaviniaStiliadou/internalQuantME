@@ -21,5 +21,5 @@ module.exports = {
   githubRepositoryPath: process.env.QRM_REPOPATH,
   qrmRepositoryWebPath: process.env.QRM_REPOWEBPATH,
   qrmRepositoryLocalPath: process.env.QRM_REPOLOCALPATH,
-  qrmRepositoryLocalName: process.env.QRM_REPOLOCALNAME
+  qrmRepositoryLocalName: process.env.QRM_REPOLOCALNAME || 'QRMRepository'
 };
