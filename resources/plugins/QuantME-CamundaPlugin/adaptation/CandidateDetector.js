@@ -14,6 +14,8 @@ import { getRootProcess } from 'client/src/app/quantme/utilities/Utilities';
 import { createModelerFromXml } from '../quantme/Utilities';
 import generateImage from 'client/src/app/util/generateImage';
 
+
+
 /**
  * Find candidates within the current workflow model that can be executed efficiently using a hybrid runtime
  *
@@ -25,6 +27,7 @@ export async function findOptimizationCandidates(modeler) {
   // get the root element of the current workflow model
   const definitions = modeler.getDefinitions();
   const rootElement = getRootProcess(definitions);
+  const elementRegistry = modeler.get('elementRegistry');
   console.log('Searching optimization candidates for workflow with root element: ', rootElement);
 
   // export xml of the current workflow model to enable a later image creation
@@ -53,7 +56,10 @@ export async function findOptimizationCandidates(modeler) {
       && containsClassicalTask(optimizationCandidate)) {
 
       // generate visual representation of the candidate using base64
-      optimizationCandidate = await visualizeCandidate(optimizationCandidate, workflowXml.xml);
+      optimizationCandidate = await visualizeCandidate(optimizationCandidate, workflowXml.xml, 'png');
+      generateCandidateGroup(optimizationCandidate.groupBox, modeler);
+
+      // await refreshModeler(modeler);
 
       console.log('Found valid optimization candidate: ', optimizationCandidate);
       optimizationCandidates.push(optimizationCandidate);
@@ -64,6 +70,21 @@ export async function findOptimizationCandidates(modeler) {
 
   // return all valid optimization candidates for the analysis and rewrite modal
   return optimizationCandidates;
+}
+
+/**
+ * Generate Group Element for hybrid runtime area
+ *
+ * @param groupBox
+ * @param modeler
+ */
+async function generateCandidateGroup(groupBox, modeler) {
+  let definitions = modeler.getDefinitions();
+  let rootElement = getRootProcess(definitions);
+  const elementRegistry = modeler.get('elementRegistry');
+  let rootElementBo = elementRegistry.get(rootElement.id);
+  let modeling = modeler.get('modeling');
+  return modeling.createShape({ type: 'quantme:HybridRuntimeGroup' }, { x: groupBox.x, y: groupBox.y, width: groupBox.width, height: groupBox.height }, rootElementBo, {});
 }
 
 /**
@@ -122,11 +143,18 @@ async function visualizeCandidate(optimizationCandidate, workflowXml) {
   let svg = await saveSvgWrapper();
 
   // calculate view box for the SVG
-  svg = calculateViewBox(optimizationCandidate, svg, elementRegistry);
+  svg = generateSVG(optimizationCandidate, svg, elementRegistry);
+  const viewBox = calculateViewBox(optimizationCandidate, svg, elementRegistry);
+  let groupBox = {};
+  groupBox.x = viewBox.minX - 25;
+  groupBox.y = viewBox.minY - 25;
+  groupBox.width = viewBox.maxX - viewBox.minX + 45;
+  groupBox.height = viewBox.maxY - viewBox.minY + 45;
 
   // generate png from svg
   optimizationCandidate.candidateImage = generateImage('png', svg);
   optimizationCandidate.modeler = modeler;
+  optimizationCandidate.groupBox = groupBox;
   return optimizationCandidate;
 }
 
@@ -138,8 +166,32 @@ async function visualizeCandidate(optimizationCandidate, workflowXml) {
  * @param elementRegistry element registry of the modeler containing the complete workflow to access all contained elements
  * @return the updated svg with the calculated view box
  */
-function calculateViewBox(optimizationCandidate, svg, elementRegistry) {
+function generateSVG(optimizationCandidate, svg, elementRegistry) {
+  let viewBox = calculateViewBox(optimizationCandidate, svg, elementRegistry);
 
+  let width, height, x, y;
+  if (viewBox.minX === undefined || viewBox.minY === undefined || viewBox.maxX === undefined || viewBox.maxY === undefined) {
+    console.log('Error: unable to find modeling element with minimum and maximum x and y values!');
+
+    // default values in case an error occurred
+    width = 1000;
+    height = 1000;
+    x = 0;
+    y = 0;
+  } else {
+
+    // calculate view box and add a margin of 10 to the min/max values
+    x = viewBox.minX - 10;
+    y = viewBox.minY - 10;
+    width = viewBox.maxX - viewBox.minX + 20;
+    height = viewBox.maxY - viewBox.minY + 20;
+  }
+
+  return svg.replace('<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="0" height="0" viewBox="0 0 0 0" version="1.1">',
+    '<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="' + width + '" height="' + height + '" viewBox="' + x + ' ' + y + ' ' + width + ' ' + height + '" version="1.1">');
+}
+
+function calculateViewBox(optimizationCandidate, svg, elementRegistry) {
   // search for the modeling elements with the minimal and maximal x and y values
   let result = {};
   for (let i = 0; i < optimizationCandidate.containedElements.length; i++) {
@@ -186,27 +238,7 @@ function calculateViewBox(optimizationCandidate, svg, elementRegistry) {
   console.log('Minimum y value for candidate: ', result.minY);
   console.log('Maximum x value for candidate: ', result.maxX);
   console.log('Maximum y value for candidate: ', result.maxY);
-
-  let width, height, x, y;
-  if (result.minX === undefined || result.minY === undefined || result.maxX === undefined || result.maxY === undefined) {
-    console.log('Error: unable to find modeling element with minimum and maximum x and y values!');
-
-    // default values in case an error occurred
-    width = 1000;
-    height = 1000;
-    x = 0;
-    y = 0;
-  } else {
-
-    // calculate view box and add a margin of 10 to the min/max values
-    x = result.minX - 10;
-    y = result.minY - 10;
-    width = result.maxX - result.minX + 20;
-    height = result.maxY - result.minY + 20;
-  }
-
-  return svg.replace('<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="0" height="0" viewBox="0 0 0 0" version="1.1">',
-    '<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="' + width + '" height="' + height + '" viewBox="' + x + ' ' + y + ' ' + width + ' ' + height + '" version="1.1">');
+  return result;
 }
 
 /**

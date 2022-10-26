@@ -42,10 +42,17 @@ export function requiredAttributesAvailable(element) {
     return checkReadoutErrorMitigationTask(bo);
   case consts.QUANTUM_HARDWARE_SELECTION_SUBPROCESS:
     return checkHardwareSelectionSubprocess(bo);
+  case consts.HYBRID_RUNTIME_GROUP:
+    return checkHybridRuntimeGroup(bo);
   default:
     console.log('Unsupported QuantME element of type: ', element.$type);
     return false;
   }
+}
+
+function checkHybridRuntimeGroup(bo) {
+  // TODO check validity of group
+  return !(typeof bo.provider === 'undefined');
 }
 
 function checkHardwareSelectionSubprocess(bo) {

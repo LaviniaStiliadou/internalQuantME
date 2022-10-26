@@ -52,6 +52,120 @@ export async function startReplacementProcess(xml, currentQRMs, endpointConfig) 
     return { status: 'transformed', xml: xml };
   }
 
+  // check for hybrid loop groups
+  const hybridRuntimeGroups = getHybridRuntimeGroups(rootElement, elementRegistry);
+
+  for (let hybridRuntimeGroup of hybridRuntimeGroups) {
+    let groupElement = elementRegistry.get(hybridRuntimeGroup.group.id);
+    let groupX, groupY, groupWidth, groupHeight;
+    groupX= groupElement.x;
+    groupY = groupElement.y;
+    groupWidth = groupElement.width;
+    groupHeight = groupElement.height;
+    console.log(groupElement);
+    console.log(groupX, groupY, groupWidth, groupHeight);
+
+    let elementsInGroup = [];
+    let elementIdsInGroup =[];
+    for (let flowElement of rootElement.flowElements) {
+      if (flowElement.$type !== 'bpmn:StartEvent' && flowElement.$type !== 'bpmn:EndEvent') {
+        console.log(flowElement);
+        let flowElementBo = elementRegistry.get(flowElement.id);
+        console.log(flowElementBo);
+        // check for each sequence flow if all points are within the group
+        if (flowElementBo.waypoints) {
+          let inside = true;
+          for (let waypoint of flowElementBo.waypoints) {
+            if (!(waypoint.x > groupX && waypoint.x < groupX + groupWidth
+              && waypoint.y > groupY && waypoint.y < groupY + groupHeight)) {
+              inside = false;
+            }
+          }
+          if (inside) {
+            elementsInGroup.push(flowElement);
+            elementIdsInGroup.push(flowElement.id);
+          }
+        // check for tasks and gateways if all corners of the element are within the group
+        } else if (flowElementBo.x && flowElementBo.y && flowElementBo.width && flowElementBo.height) {
+          if (flowElementBo.x > groupX && flowElementBo.x < groupX + groupWidth
+            && flowElementBo.x + flowElementBo.width < groupX + groupWidth
+            && flowElementBo.y > groupY && flowElementBo.y < groupY + groupHeight
+            && flowElementBo.y + flowElementBo.height < groupY + groupHeight) {
+            elementsInGroup.push(flowElement);
+            elementIdsInGroup.push(flowElement.id);
+          }
+        }
+      }
+    }
+
+    console.log(elementsInGroup);
+    console.log(elementIdsInGroup);
+    // remove outer sequence flow if existing
+    for (let el of elementsInGroup) {
+      if (el.$type === 'bpmn:SequenceFlow') {
+        if (!elementIdsInGroup.includes(el.sourceRef.id)) {
+          const index = elementsInGroup.indexOf(el);
+          if (index > -1) {
+            elementsInGroup.splice(index, 1);
+            elementIdsInGroup.splice(index, 1);
+            continue;
+          }
+        }
+        if (!elementIdsInGroup.includes(el.targetRef.id)) {
+          const index = elementsInGroup.indexOf(el);
+          if (index > -1) {
+            elementsInGroup.splice(index, 1);
+            elementIdsInGroup.splice(index, 1);
+            continue;
+          }
+        }
+      }
+    }
+
+    let provider = hybridRuntimeGroup.group.provider;
+
+
+    console.log(elementsInGroup);
+    console.log(elementIdsInGroup);
+    console.log(elementsInGroup[0]);
+    // check for incoming and outgoing elements that are not part of the group --> set entry and exitpoint
+    let entrypoint, exit;
+    for (let el of elementsInGroup) {
+      if (el.$type === 'bpmn:SequenceFlow') {
+        continue;
+      }
+      console.log(el);
+      for (let incoming of el.incoming) {
+        if (!elementIdsInGroup.includes(incoming.id)) {
+          if (entrypoint === undefined) {
+            entrypoint = el;
+          } else {
+            console.log('Multiple Entrypoints found - Aborting Hybrid Runtime transformation');
+            return undefined;
+          }
+        }
+      }
+
+      for (let outgoing of el.outgoing) {
+        if (!elementIdsInGroup.includes(outgoing.id)) {
+          if (exit === undefined) {
+            exit = el;
+          } else {
+            console.log('Multiple Exits found - Aborting Hybrid Runtime transformation');
+            return undefined;
+          }
+        }
+      }
+    }
+    console.log(entrypoint);
+    console.log(exit);
+
+
+
+
+
+  }
+
   // check for available replacement models for all QuantME modeling constructs
   for (let replacementConstruct of replacementConstructs) {
     if (replacementConstruct.task.$type === Constants.QUANTUM_HARDWARE_SELECTION_SUBPROCESS) {
@@ -95,6 +209,25 @@ export async function startReplacementProcess(xml, currentQRMs, endpointConfig) 
   layout(modeling, elementRegistry, rootElement);
 
   return { status: 'transformed', xml: await exportXmlFromModeler(modeler) };
+}
+
+/**
+ * Get QuantME HybridRuntime Groups from process
+ */
+export function getHybridRuntimeGroups(process, elementRegistry) {
+
+  // retrieve parent object for later replacement
+  const processBo = elementRegistry.get(process.id);
+
+  const hybridRuntimeGroups = [];
+  const artifacts = process.artifacts;
+  for (let i = 0; i < artifacts.length; i++) {
+    let artifact = artifacts[i];
+    if (artifact.$type && artifact.$type === 'quantme:HybridRuntimeGroup') {
+      hybridRuntimeGroups.push({ group: artifact, parent: processBo });
+    }
+  }
+  return hybridRuntimeGroups;
 }
 
 /**

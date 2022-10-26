@@ -719,3 +719,65 @@ export function addMaxCMSizeEntry(group, translate) {
     }
   }));
 }
+
+export function addRuntimeProvider(group, translate) {
+  group.entries.push(EntryFactory.selectBox({
+    id: consts.RUNTIME_PROVIDER,
+    label: translate('Runtime Provider'),
+    selectOptions: [
+      { value:'qiskit',name:'Qiskit' } , { value:'aws',name:'AWS' }
+    ],
+    modelProperty: consts.RUNTIME_PROVIDER,
+
+    get: function(element, node) {
+      let bo = ModelUtil.getBusinessObject(element);
+      let runtimeProvider = bo && bo.runtimeProvider;
+      return { runtimeProvider: runtimeProvider };
+    },
+
+    set: function(element, values, node) {
+      let bo = ModelUtil.getBusinessObject(element);
+      return CmdHelper.updateBusinessObject(element, bo, {
+        runtimeProvider: values.runtimeProvider || undefined
+      });
+    },
+
+    validate: function(element, values, node) {
+      return true;
+    },
+
+    hidden: function(element, node) {
+      return false;
+    }
+  }));
+}
+
+export function addDataFactor(group, translate) {
+  group.entries.push(EntryFactory.textField({
+    id: consts.DATA_FACTOR,
+    label: translate('Data Factor'),
+    modelProperty: consts.DATA_FACTOR,
+
+
+    get: function(element, node) {
+      let bo = ModelUtil.getBusinessObject(element);
+      let dataFactor = bo && bo.dataFactor;
+      return { dataFactor: dataFactor };
+    },
+
+    set: function(element, values, node) {
+      let bo = ModelUtil.getBusinessObject(element);
+      return CmdHelper.updateBusinessObject(element, bo, {
+        dataFactor: values.dataFactor || undefined
+      });
+    },
+
+    validate: function(element, values, node) {
+      return true;
+    },
+
+    hidden: function(element, node) {
+      return false;
+    }
+  }));
+}

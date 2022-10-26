@@ -80,3 +80,15 @@ export var SUBPROCESS = [
     }
   }
 ];
+
+
+export var GROUP = [
+  {
+    label: 'Hybrid Runtime Group',
+    actionName: 'replace-with-hybrid-runtime-service-task',
+    className: 'bpmn-icon-hybrid-runtime-group',
+    target: {
+      type: consts.HYBRID_RUNTIME_GROUP
+    }
+  }
+];

@@ -39,6 +39,11 @@ export default class QuantMEReplaceMenuProvider extends ReplaceMenuProvider {
     if (is(element, 'bpmn:SubProcess')) {
       options = options.concat(super._createEntries(element, quantmeReplaceOptions.SUBPROCESS));
     }
+
+    // add additional elements to replace groups
+    if (is(element, 'bpmn:Group')) {
+      options = options.concat(super._createEntries(element, quantmeReplaceOptions.GROUP));
+    }
     return options;
   }
 }

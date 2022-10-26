@@ -226,16 +226,32 @@ export default class QuantMERenderer extends BpmnRenderer {
         });
 
         return task;
+      },
+      [consts.HYBRID_RUNTIME_GROUP]: function(self, parentGfx, element) {
+        var group = self.renderer('bpmn:Group')(parentGfx, element);
+
+        var pathData = quantMEPathMap.getPath('GROUP_HYBRID_RUNTIME');
+
+        drawPath(parentGfx, pathData, {
+          transform:'scale(0.2)',
+          strokeWidth: 0.5,
+          fill: getFillColor(element, '#FFFFFF'),
+          stroke: getStrokeColor(element, defaultStrokeColor)
+        });
+
+        return group;
       }
     };
   }
 
   renderer(type) {
+    console.log(type);
     return this.handlers[type];
   }
 
   canRender(element) {
 
+    console.log(element);
     // default elements can be handled
     if (super.canRender(element)) {
       return true;

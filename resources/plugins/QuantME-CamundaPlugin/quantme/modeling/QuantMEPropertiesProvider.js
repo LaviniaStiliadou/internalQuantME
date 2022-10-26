@@ -13,6 +13,7 @@ import PropertiesActivator from 'bpmn-js-properties-panel/lib/PropertiesActivato
 import CamundaPropertiesProvider from 'bpmn-js-properties-panel/lib/provider/camunda/CamundaPropertiesProvider';
 import * as consts from 'client/src/app/quantme/Constants';
 import { serviceTaskDelegateProps } from './service-tasks/ServiceTaskDelegateProps';
+import { is } from 'bpmn-js/lib/util/ModelUtil';
 
 let QuantMEPropertyEntryHandler = require('./QuantMEPropertyEntryHandler');
 
@@ -35,6 +36,11 @@ export default class QuantMEPropertiesProvider extends PropertiesActivator {
 
   getTabs(element) {
     const tabs = this.camundaPropertiesProvider.getTabs(element);
+
+    // add additonal properties (e.g., dataFactor) to all tasks and subtasks of 'bpmn:task'
+    if (is(element, 'bpmn:Task')) {
+      handleTasks(element, tabs, this.translate);
+    }
 
     // add properties of QuantME tasks to panel
     if (element.type && element.type.startsWith('quantme:')) {
@@ -101,6 +107,27 @@ function handleServiceTask(element, tabs, translate, bpmnFactory, wineryEndpoint
   serviceTaskDelegateProps(detailsGroup, element, bpmnFactory, translate, wineryEndpoint);
 }
 
+function handleTasks(element, tabs, translate) {
+  // search for general tab in properties to add QuantME properties
+  let generalTabWithId = findById(tabs, 'general');
+
+  if (generalTabWithId == null) {
+    console.log('Unable to find \'general\' tab for element: ', element);
+    return tabs;
+  }
+  const generalTab = generalTabWithId.element;
+  const generalTabId = generalTabWithId.index;
+
+  // add DataFactor to all tasks that are subtask of bpmn:Task
+  for (let i = 0; i < generalTab.groups.length; i++) {
+    if (generalTab.groups[i].id === 'general') {
+      addDataFactorEntries(generalTab.groups[i], translate);
+      tabs[generalTabId] = generalTab;
+      console.log(generalTab.groups[i]);
+    }
+  }
+}
+
 /**
  * Update the given set of property panel tabs with the QuantME specific properties
  *
@@ -121,6 +148,14 @@ function handleQuantMETasks(element, tabs, translate) {
   const generalTab = generalTabWithId.element;
   const generalTabId = generalTabWithId.index;
 
+  // add DataFactor to all tasks
+  for (let group in generalTab.groups) {
+    if (group.id === 'general') {
+      addDataFactorEntries(group, translate);
+    }
+  }
+
+  console.log(generalTab);
   // add required properties to general tab
   const quantMEGroup = {
     id: 'quantme',
@@ -163,6 +198,9 @@ function addQuantMEEntries(group, element, translate) {
     break;
   case consts.QUANTUM_HARDWARE_SELECTION_SUBPROCESS:
     addHardwareSelectionSubprocessEntries(group, translate);
+    break;
+  case consts.HYBRID_RUNTIME_GROUP:
+    addHybridRuntimeEntries(group, translate);
     break;
   default:
     console.log('Unsupported QuantME element of type: ', element.type);
@@ -232,6 +270,15 @@ function addHardwareSelectionSubprocessEntries(group, translate) {
   QuantMEPropertyEntryHandler.addProvidersEntry(group, translate);
   QuantMEPropertyEntryHandler.addSimulatorsAllowedEntry(group, translate);
   QuantMEPropertyEntryHandler.addSelectionStrategyEntry(group, translate);
+}
+
+function addHybridRuntimeEntries(group, translate) {
+  QuantMEPropertyEntryHandler.addRuntimeProvider(group, translate);
+
+}
+
+function addDataFactorEntries(group, translate) {
+  QuantMEPropertyEntryHandler.addDataFactor(group, translate);
 }
 
 QuantMEPropertiesProvider.$inject = [

@@ -40,6 +40,17 @@
         ]
       },
       {
+        "name": "HybridRuntimeGroup",
+        "superClass": [ "bpmn:Group" ],
+        "properties": [
+          {
+            "name": "provider",
+            "isAttr": true,
+            "type": "String"
+          }
+        ]
+      },
+      {
         "name": "QuantumComputationTask",
         "superClass": [ "bpmn:Task" ],
         "properties": [
@@ -230,6 +241,11 @@
           },
           {
             "name": "hybridProgramId",
+            "isAttr": true,
+            "type": "String"
+          },
+          {
+            "name": "dataFactor",
             "isAttr": true,
             "type": "String"
           },
