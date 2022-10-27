@@ -14,6 +14,7 @@ import * as quantmeReplaceOptions from './QuantMEReplaceOptions';
 import * as consts from 'client/src/app/quantme/Constants';
 import { append as svgAppend, attr as svgAttr, create as svgCreate } from 'tiny-svg';
 import { getFillColor, getStrokeColor } from 'bpmn-js/lib/draw/BpmnRenderUtil';
+import { is } from 'bpmn-js/lib/util/ModelUtil';
 
 /**
  * This class extends the default BPMNRenderer to render the newly introduced QuantME task types
@@ -22,14 +23,15 @@ export default class QuantMERenderer extends BpmnRenderer {
   constructor(config, eventBus, styles, pathMap, quantMEPathMap, canvas, textRenderer) {
     super(config, eventBus, styles, pathMap, canvas, textRenderer, 1001);
 
-    var computeStyle = styles.computeStyle;
+    this.computeStyle = styles.computeStyle;
+    console.log(this.computeStyle);
+    this.quantMEPathMap = quantMEPathMap;
 
     var defaultFillColor = config && config.defaultFillColor,
         defaultStrokeColor = config && config.defaultStrokeColor;
 
-    function drawPath(parentGfx, d, attrs) {
-
-      attrs = computeStyle(attrs, [ 'no-fill' ], {
+    function drawPath(self, parentGfx, d, attrs,) {
+      attrs = self.computeStyle(attrs, [ 'no-fill' ], {
         strokeWidth: 2,
         stroke: 'black'
       });
@@ -43,13 +45,14 @@ export default class QuantMERenderer extends BpmnRenderer {
       return path;
     }
 
+
     this.quantMeHandlers = {
       [consts.QUANTUM_HARDWARE_SELECTION_SUBPROCESS]: function(self, parentGfx, element) {
         var subprocess = self.renderer('bpmn:SubProcess')(parentGfx, element);
 
         var pathData = quantMEPathMap.getPath('SUBPROCESS_QUANTUM_HARDWARE_SELECTION');
 
-        drawPath(parentGfx, pathData, {
+        drawPath(self,parentGfx, pathData, {
           transform:'scale(0.5)',
           strokeWidth: 1.5,
           fill: getFillColor(element, defaultFillColor),
@@ -58,7 +61,7 @@ export default class QuantMERenderer extends BpmnRenderer {
 
         // create circuit paths with filled shapes
         pathData = quantMEPathMap.getPath('SUBPROCESS_QUANTUM_HARDWARE_SELECTION_FILL');
-        drawPath(parentGfx, pathData, {
+        drawPath(self, parentGfx, pathData, {
           transform:'scale(0.5)',
           strokeWidth: 1.5,
           fill: getFillColor(element, '#000000'),
@@ -72,7 +75,7 @@ export default class QuantMERenderer extends BpmnRenderer {
 
         var pathData = quantMEPathMap.getPath('TASK_TYPE_QUANTUM_COMPUTATION');
 
-        drawPath(parentGfx, pathData, {
+        drawPath(self, parentGfx, pathData, {
           transform:'scale(0.3)',
           strokeWidth: 2.5,
           fill: getFillColor(element, defaultFillColor),
@@ -86,7 +89,7 @@ export default class QuantMERenderer extends BpmnRenderer {
 
         // create circuit paths without filled shapes
         var pathData = quantMEPathMap.getPath('TASK_TYPE_CIRCUIT_LOADING');
-        drawPath(parentGfx, pathData, {
+        drawPath(self, parentGfx, pathData, {
           transform:'scale(0.3)',
           strokeWidth: 2.5,
           fill: getFillColor(element, defaultStrokeColor),
@@ -95,7 +98,7 @@ export default class QuantMERenderer extends BpmnRenderer {
 
         // create circuit paths with filled shapes
         pathData = quantMEPathMap.getPath('TASK_TYPE_CIRCUIT_LOADING_FILL');
-        drawPath(parentGfx, pathData, {
+        drawPath(self, parentGfx, pathData, {
           transform:'scale(0.3)',
           strokeWidth: 2.5,
           fill: getFillColor(element, '#000000'),
@@ -108,7 +111,7 @@ export default class QuantMERenderer extends BpmnRenderer {
         var task = self.renderer('bpmn:Task')(parentGfx, element);
 
         var pathData = quantMEPathMap.getPath('TASK_TYPE_DATA_PREPARATION');
-        drawPath(parentGfx, pathData, {
+        drawPath(self, parentGfx, pathData, {
           transform:'scale(0.3)',
           strokeWidth: 2.5,
           fill: getFillColor(element, defaultFillColor),
@@ -117,7 +120,7 @@ export default class QuantMERenderer extends BpmnRenderer {
 
         // create circuit paths with filled shapes (black)
         pathData = quantMEPathMap.getPath('TASK_TYPE_DATA_PREPARATION_FILL_BLACK');
-        drawPath(parentGfx, pathData, {
+        drawPath(self, parentGfx, pathData, {
           transform:'scale(0.3)',
           strokeWidth: 2.5,
           fill: getFillColor(element, '#000000'),
@@ -126,7 +129,7 @@ export default class QuantMERenderer extends BpmnRenderer {
 
         // create circuit paths with filled shapes (background color)
         pathData = quantMEPathMap.getPath('TASK_TYPE_DATA_PREPARATION_FILL_BACKGROUND');
-        drawPath(parentGfx, pathData, {
+        drawPath(self, parentGfx, pathData, {
           transform:'scale(0.3)',
           strokeWidth: 2.5,
           fill: getFillColor(element, defaultStrokeColor),
@@ -135,7 +138,7 @@ export default class QuantMERenderer extends BpmnRenderer {
 
         // create circuit paths with dashed shapes
         pathData = quantMEPathMap.getPath('TASK_TYPE_DATA_PREPARATION_DASHED');
-        drawPath(parentGfx, pathData, {
+        drawPath(self, parentGfx, pathData, {
           transform:'scale(0.3)',
           strokeWidth: 2.5,
           strokeDasharray: 5,
@@ -144,7 +147,7 @@ export default class QuantMERenderer extends BpmnRenderer {
 
         // create white line for database
         pathData = quantMEPathMap.getPath('TASK_TYPE_DATA_PREPARATION_BACKGROUND');
-        drawPath(parentGfx, pathData, {
+        drawPath(self, parentGfx, pathData, {
           transform:'scale(0.3)',
           strokeWidth: 2.5,
           stroke: getFillColor(element, '#FFFFFF')
@@ -156,7 +159,7 @@ export default class QuantMERenderer extends BpmnRenderer {
         var task = self.renderer('bpmn:Task')(parentGfx, element);
 
         var pathData = quantMEPathMap.getPath('TASK_TYPE_ORACLE_EXPANSION');
-        drawPath(parentGfx, pathData, {
+        drawPath(self, parentGfx, pathData, {
           transform:'scale(0.3)',
           strokeWidth: 2.5,
           fill: getFillColor(element, defaultFillColor),
@@ -165,7 +168,7 @@ export default class QuantMERenderer extends BpmnRenderer {
 
         // create circuit paths with filled shapes
         pathData = quantMEPathMap.getPath('TASK_TYPE_ORACLE_EXPANSION_FILL_BLACK');
-        drawPath(parentGfx, pathData, {
+        drawPath(self, parentGfx, pathData, {
           transform:'scale(0.3)',
           strokeWidth: 2.5,
           fill: getFillColor(element, '#000000'),
@@ -174,7 +177,7 @@ export default class QuantMERenderer extends BpmnRenderer {
 
         // create oracle box
         pathData = quantMEPathMap.getPath('TASK_TYPE_ORACLE_EXPANSION_BOX');
-        drawPath(parentGfx, pathData, {
+        drawPath(self, parentGfx, pathData, {
           transform:'scale(0.3)',
           strokeWidth: 2.5,
           fill: getFillColor(element, '#000000'),
@@ -183,7 +186,7 @@ export default class QuantMERenderer extends BpmnRenderer {
 
         // create arrow
         pathData = quantMEPathMap.getPath('TASK_TYPE_ORACLE_EXPANSION_ARROW');
-        drawPath(parentGfx, pathData, {
+        drawPath(self, parentGfx, pathData, {
           transform:'scale(0.3)',
           strokeWidth: 2.5,
           fill: getFillColor(element, '#000000'),
@@ -196,7 +199,7 @@ export default class QuantMERenderer extends BpmnRenderer {
         var task = self.renderer('bpmn:Task')(parentGfx, element);
 
         var pathData = quantMEPathMap.getPath('TASK_TYPE_CIRCUIT_EXECUTION');
-        drawPath(parentGfx, pathData, {
+        drawPath(self, parentGfx, pathData, {
           transform:'scale(0.3)',
           strokeWidth: 2.5,
           fill: getFillColor(element, defaultFillColor),
@@ -204,7 +207,7 @@ export default class QuantMERenderer extends BpmnRenderer {
         });
 
         pathData = quantMEPathMap.getPath('TASK_TYPE_CIRCUIT_EXECUTION_FILL');
-        drawPath(parentGfx, pathData, {
+        drawPath(self, parentGfx, pathData, {
           transform:'scale(0.3)',
           strokeWidth: 2.5,
           fill: getFillColor(element, '#000000'),
@@ -218,7 +221,7 @@ export default class QuantMERenderer extends BpmnRenderer {
 
         var pathData = quantMEPathMap.getPath('TASK_TYPE_ERROR_MITIGATION');
 
-        drawPath(parentGfx, pathData, {
+        drawPath(self, parentGfx, pathData, {
           transform:'scale(0.3)',
           strokeWidth: 0.5,
           fill: getFillColor(element, '#000000'),
@@ -232,7 +235,7 @@ export default class QuantMERenderer extends BpmnRenderer {
 
         var pathData = quantMEPathMap.getPath('GROUP_HYBRID_RUNTIME');
 
-        drawPath(parentGfx, pathData, {
+        drawPath(self, parentGfx, pathData, {
           transform:'scale(0.2)',
           strokeWidth: 0.5,
           fill: getFillColor(element, '#FFFFFF'),
@@ -269,19 +272,67 @@ export default class QuantMERenderer extends BpmnRenderer {
   }
 
   drawShape(parentNode, element) {
-
+    let camundaRendered;
     // handle QuantME elements
     if (element.type in this.quantMeHandlers) {
       var h = this.quantMeHandlers[element.type];
 
       /* jshint -W040 */
-      return h(this, parentNode, element);
-    }
+      camundaRendered = h(this, parentNode, element);
 
     // use parent class for all non QuantME elements
-    return super.drawShape(parentNode, element);
+    } else {
+      camundaRendered = super.drawShape(parentNode, element);
+    }
+
+    function drawText(parentGfx, text, attrs) {
+      let svgEl = svgCreate('<text>'+text+'</text>');
+      svgAttr(svgEl, attrs);
+      svgAppend(parentGfx, svgEl);
+      return svgEl;
+    }
+
+    function drawPath(self, parentGfx, d, attrs,) {
+      attrs = self.computeStyle(attrs, [ 'no-fill' ], {
+        strokeWidth: 2,
+        stroke: 'black'
+      });
+
+      const path = svgCreate('path');
+      svgAttr(path, { d: d });
+      svgAttr(path, attrs);
+      svgAttr(path, { x: 0, y: -50 });
+
+      svgAppend(parentGfx, path);
+
+      return path;
+    }
+
+    // draw datafactor number next to tasks with assigned variable
+    if (is(element, 'bpmn:Task') && element.businessObject.dataFactor) {
+      drawText(parentNode, element.businessObject.dataFactor, { x: 71, y: -5 });
+
+      var pathData = this.quantMEPathMap.getPath('DATA_FACTOR_ICON');
+      drawPath(this, parentNode, pathData, {
+        transform:'scale(0.21), translate(290,-111)',
+        strokeWidth: 5,
+        fill: getFillColor(element, '#FFFFFF'),
+        stroke: getStrokeColor(element, '#000000'),
+        'fill-opacity': 0,
+      });
+
+    }
+
+
+    console.log(element.businessObject);
+    return camundaRendered;
   }
+
+
+
+
 }
+
 
 QuantMERenderer.$inject = [
   'config',
