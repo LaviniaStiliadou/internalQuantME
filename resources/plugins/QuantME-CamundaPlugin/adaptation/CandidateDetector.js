@@ -50,11 +50,36 @@ export async function findOptimizationCandidates(modeler) {
       containedElements: [entryPoints[i], outgoingFlow]
     });
 
+    // include tasks at the start with DataFactor > 1, and at the end with DataFactor < 1.
+    let loopExitPoint = optimizationCandidate.containedElements.find(element => element.$type === 'bpmn:ExclusiveGateway' && element.id !== entryPoint.id);
+    let outgoingLoopFlow = optimizationCandidate.containedElements.includes(loopExitPoint.outgoing[1]) ? loopExitPoint.outgoing[0] : loopExitPoint.outgoing[1];
+    let incomingLoopFlow = optimizationCandidate.containedElements.includes(entryPoint.incoming[1]) ? entryPoint.incoming[0] : entryPoint.incoming[1];
+
+    incomingLoopFlow.bestDF = 1;
+    incomingLoopFlow.bestPoint = 0;
+    incomingLoopFlow.currentDF = 1;
+    incomingLoopFlow.additionalElements = [];
+    outgoingLoopFlow.bestDF = 1;
+    outgoingLoopFlow.bestPoint = 0;
+    outgoingLoopFlow.currentDF = 1;
+    outgoingLoopFlow.additionalElements = [];
+    const preTasks = includePreviousTaskForDFEfficiency(incomingLoopFlow);
+    const afterTasks = includeNextTaskForDFEfficiency(outgoingLoopFlow);
+
+    if (preTasks.bestPoint > 0) {
+      optimizationCandidate.containedElements = optimizationCandidate.containedElements.concat(preTasks.additionalElements.slice(0, preTasks.bestPoint));
+    }
+    if (afterTasks.bestPoint > 0) {
+      optimizationCandidate.containedElements = optimizationCandidate.containedElements.concat(afterTasks.additionalElements.slice(0, afterTasks.bestPoint));
+    }
+
+
     // candidate must comprise at least one quantum circuit execution and classical task to benefit from a hybrid runtime
     if (optimizationCandidate !== undefined
       && containsQuantumCircuitExecutionTask(optimizationCandidate)
       && containsClassicalTask(optimizationCandidate)) {
 
+      console.log(optimizationCandidate);
       // generate visual representation of the candidate using base64
       optimizationCandidate = await visualizeCandidate(optimizationCandidate, workflowXml.xml, 'png');
       generateCandidateGroup(optimizationCandidate.groupBox, modeler);
@@ -70,6 +95,59 @@ export async function findOptimizationCandidates(modeler) {
 
   // return all valid optimization candidates for the analysis and rewrite modal
   return optimizationCandidates;
+}
+
+
+function includePreviousTaskForDFEfficiency(flow) {
+  console.log(flow);
+  let currentTask = flow.sourceRef;
+  if (['bpmn:ServiceTask', 'bpmn:ScriptTask', 'quantme:QuantumCircuitExecutionTask'].includes(currentTask.$type)
+       && currentTask.incoming.length === 1 && currentTask.dataFactor) {
+    let nextFlow = currentTask.incoming[0];
+    nextFlow.currentDF = flow.currentDF * currentTask.dataFactor;
+    if (flow.additionalElements.length === 0) {
+      nextFlow.additionalElements = [flow, currentTask];
+    } else {
+      nextFlow.additionalElements = flow.additionalElements;
+      nextFlow.additionalElements.push(flow, currentTask);
+    }
+    if (nextFlow.currentDF > flow.bestDF) {
+      nextFlow.bestDF = nextFlow.currentDF;
+      nextFlow.bestPoint = nextFlow.additionalElements.length;
+    } else {
+      nextFlow.bestDF = flow.bestDF;
+      nextFlow.bestPoint = flow.bestPoint;
+    }
+    return includePreviousTaskForDFEfficiency(nextFlow);
+  } else {
+    return flow;
+  }
+}
+
+function includeNextTaskForDFEfficiency(flow) {
+  console.log(flow);
+  let currentTask = flow.targetRef;
+  if (['bpmn:ServiceTask', 'bpmn:ScriptTask', 'quantme:QuantumCircuitExecutionTask'].includes(currentTask.$type)
+    && currentTask.outgoing.length === 1 && currentTask.dataFactor) {
+    let nextFlow = currentTask.outgoing[0];
+    nextFlow.currentDF = flow.currentDF * currentTask.dataFactor;
+    if (flow.additionalElements.length === 0) {
+      nextFlow.additionalElements = [flow, currentTask];
+    } else {
+      nextFlow.additionalElements = flow.additionalElements;
+      nextFlow.additionalElements.push(flow, currentTask);
+    }
+    if (nextFlow.currentDF < flow.bestDF) {
+      nextFlow.bestDF = nextFlow.currentDF;
+      nextFlow.bestPoint = nextFlow.additionalElements.length;
+    } else {
+      nextFlow.bestDF = flow.bestDF;
+      nextFlow.bestPoint = flow.bestPoint;
+    }
+    return includeNextTaskForDFEfficiency(nextFlow);
+  } else {
+    return flow;
+  }
 }
 
 /**
@@ -144,7 +222,7 @@ async function visualizeCandidate(optimizationCandidate, workflowXml) {
 
   // calculate view box for the SVG
   svg = generateSVG(optimizationCandidate, svg, elementRegistry);
-  const viewBox = calculateViewBox(optimizationCandidate, svg, elementRegistry);
+  const viewBox = calculateViewBox(optimizationCandidate, elementRegistry);
   let groupBox = {};
   groupBox.x = viewBox.minX - 25;
   groupBox.y = viewBox.minY - 25;
@@ -167,7 +245,7 @@ async function visualizeCandidate(optimizationCandidate, workflowXml) {
  * @return the updated svg with the calculated view box
  */
 function generateSVG(optimizationCandidate, svg, elementRegistry) {
-  let viewBox = calculateViewBox(optimizationCandidate, svg, elementRegistry);
+  let viewBox = calculateViewBox(optimizationCandidate, elementRegistry);
 
   let width, height, x, y;
   if (viewBox.minX === undefined || viewBox.minY === undefined || viewBox.maxX === undefined || viewBox.maxY === undefined) {
@@ -191,7 +269,7 @@ function generateSVG(optimizationCandidate, svg, elementRegistry) {
     '<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="' + width + '" height="' + height + '" viewBox="' + x + ' ' + y + ' ' + width + ' ' + height + '" version="1.1">');
 }
 
-function calculateViewBox(optimizationCandidate, svg, elementRegistry) {
+function calculateViewBox(optimizationCandidate, elementRegistry) {
   // search for the modeling elements with the minimal and maximal x and y values
   let result = {};
   for (let i = 0; i < optimizationCandidate.containedElements.length; i++) {

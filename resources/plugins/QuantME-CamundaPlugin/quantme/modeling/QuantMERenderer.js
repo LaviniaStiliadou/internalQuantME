@@ -24,7 +24,6 @@ export default class QuantMERenderer extends BpmnRenderer {
     super(config, eventBus, styles, pathMap, canvas, textRenderer, 1001);
 
     this.computeStyle = styles.computeStyle;
-    console.log(this.computeStyle);
     this.quantMEPathMap = quantMEPathMap;
 
     var defaultFillColor = config && config.defaultFillColor,
@@ -248,13 +247,10 @@ export default class QuantMERenderer extends BpmnRenderer {
   }
 
   renderer(type) {
-    console.log(type);
     return this.handlers[type];
   }
 
   canRender(element) {
-
-    console.log(element);
     // default elements can be handled
     if (super.canRender(element)) {
       return true;
@@ -322,9 +318,6 @@ export default class QuantMERenderer extends BpmnRenderer {
       });
 
     }
-
-
-    console.log(element.businessObject);
     return camundaRendered;
   }
 
