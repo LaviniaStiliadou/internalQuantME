@@ -11,8 +11,7 @@
 
 import lodash from 'lodash';
 import { getRootProcess } from 'client/src/app/quantme/utilities/Utilities';
-import { createModelerFromXml } from '../quantme/Utilities';
-import generateImage from 'client/src/app/util/generateImage';
+
 
 
 
@@ -27,11 +26,7 @@ export async function findOptimizationCandidates(modeler) {
   // get the root element of the current workflow model
   const definitions = modeler.getDefinitions();
   const rootElement = getRootProcess(definitions);
-  const elementRegistry = modeler.get('elementRegistry');
   console.log('Searching optimization candidates for workflow with root element: ', rootElement);
-
-  // export xml of the current workflow model to enable a later image creation
-  let workflowXml = await modeler.get('bpmnjs').saveXML();
 
   // get all potential entry points for a hybrid loop
   let entryPoints = findEntryPoints(rootElement);
@@ -50,42 +45,39 @@ export async function findOptimizationCandidates(modeler) {
       containedElements: [entryPoints[i], outgoingFlow]
     });
 
-    // include tasks at the start with DataFactor > 1, and at the end with DataFactor < 1.
+    // set starting points to include tasks at the start with DataFactor > 1, and at the end with DataFactor < 1.
     let loopExitPoint = optimizationCandidate.containedElements.find(element => element.$type === 'bpmn:ExclusiveGateway' && element.id !== entryPoint.id);
     let outgoingLoopFlow = optimizationCandidate.containedElements.includes(loopExitPoint.outgoing[1]) ? loopExitPoint.outgoing[0] : loopExitPoint.outgoing[1];
     let incomingLoopFlow = optimizationCandidate.containedElements.includes(entryPoint.incoming[1]) ? entryPoint.incoming[0] : entryPoint.incoming[1];
-
-    incomingLoopFlow.bestDF = 1;
-    incomingLoopFlow.bestPoint = 0;
-    incomingLoopFlow.currentDF = 1;
-    incomingLoopFlow.additionalElements = [];
-    outgoingLoopFlow.bestDF = 1;
-    outgoingLoopFlow.bestPoint = 0;
-    outgoingLoopFlow.currentDF = 1;
-    outgoingLoopFlow.additionalElements = [];
+    incomingLoopFlow.bestDFIncoming = 1;
+    incomingLoopFlow.bestPointIncoming = 0;
+    incomingLoopFlow.currentDFIncoming = 1;
+    incomingLoopFlow.additionalElementsIncoming = [];
+    outgoingLoopFlow.bestDFOutgoing = 1;
+    outgoingLoopFlow.bestPointOutgoing = 0;
+    outgoingLoopFlow.currentDFOutgoing = 1;
+    outgoingLoopFlow.additionalElementsOutgoing = [];
     const preTasks = includePreviousTaskForDFEfficiency(incomingLoopFlow);
     const afterTasks = includeNextTaskForDFEfficiency(outgoingLoopFlow);
 
-    if (preTasks.bestPoint > 0) {
-      optimizationCandidate.containedElements = optimizationCandidate.containedElements.concat(preTasks.additionalElements.slice(0, preTasks.bestPoint));
+    console.log('aftertasks', afterTasks, optimizationCandidate);
+    if (preTasks.bestPointIncoming > 0) {
+      optimizationCandidate.containedElements = optimizationCandidate.containedElements.concat(preTasks.additionalElementsIncoming.slice(0, preTasks.bestPointIncoming));
     }
-    if (afterTasks.bestPoint > 0) {
-      optimizationCandidate.containedElements = optimizationCandidate.containedElements.concat(afterTasks.additionalElements.slice(0, afterTasks.bestPoint));
+    if (afterTasks.bestPointOutgoing > 0) {
+      optimizationCandidate.containedElements = optimizationCandidate.containedElements.concat(afterTasks.additionalElementsOutgoing.slice(0, afterTasks.bestPointOutgoing));
     }
+    // save information of what service, script and execution tasks happened before and after the loop to merge multiple connected optimization candidates into 1 candidate
+    optimizationCandidate.incomingMergeInfo = preTasks;
+    optimizationCandidate.outgoingMergeInfo = afterTasks;
+    console.log('pretasks', preTasks);
+    console.log('aftertasks', afterTasks);
 
 
     // candidate must comprise at least one quantum circuit execution and classical task to benefit from a hybrid runtime
     if (optimizationCandidate !== undefined
       && containsQuantumCircuitExecutionTask(optimizationCandidate)
       && containsClassicalTask(optimizationCandidate)) {
-
-      console.log(optimizationCandidate);
-      // generate visual representation of the candidate using base64
-      optimizationCandidate = await visualizeCandidate(optimizationCandidate, workflowXml.xml, 'png');
-      generateCandidateGroup(optimizationCandidate.groupBox, modeler);
-
-      // await refreshModeler(modeler);
-
       console.log('Found valid optimization candidate: ', optimizationCandidate);
       optimizationCandidates.push(optimizationCandidate);
     } else {
@@ -93,30 +85,84 @@ export async function findOptimizationCandidates(modeler) {
     }
   }
 
+  console.log(optimizationCandidates);
+  let newMergedCandidates = mergeOptimizationCandidates(optimizationCandidates);
+  console.log(newMergedCandidates);
+  optimizationCandidates = newMergedCandidates;
+
+  for (let candidate of optimizationCandidates) {
+    candidate = await visualizeCandidateGroup(candidate, modeler);
+    generateCandidateGroup(candidate.groupBox, modeler);
+  }
   // return all valid optimization candidates for the analysis and rewrite modal
   return optimizationCandidates;
 }
 
+function mergeOptimizationCandidates(optimizationCandidates) {
+  for (let i = 0; i < optimizationCandidates.length; i++) {
+    optimizationCandidates = recursiveMerge(optimizationCandidates[i], optimizationCandidates);
+  }
+  return optimizationCandidates;
+}
 
+function recursiveMerge(currentCandidate, optimizationCandidates) {
+  let changes = false;
+  for (let mergeCandidate of optimizationCandidates) {
+    if (mergeCandidate.incomingMergeInfo.additionalElementsIncoming.some(item => currentCandidate.outgoingMergeInfo.additionalElementsOutgoing.includes(item))) {
+      // combine candidates and remove duplicates
+      currentCandidate.containedElements = currentCandidate.containedElements.concat(currentCandidate.outgoingMergeInfo.additionalElementsOutgoing).concat(mergeCandidate.containedElements);
+      currentCandidate.containedElements = currentCandidate.containedElements.filter((item,index) => {
+        return (currentCandidate.containedElements.indexOf(item) === index); });
+      currentCandidate.outgoingMergeInfo = mergeCandidate.outgoingMergeInfo;
+
+      // remove merged candidate
+      optimizationCandidates = optimizationCandidates.filter(item => item !== mergeCandidate);
+      console.log(currentCandidate, optimizationCandidates);
+      changes = true;
+      break;
+    }
+    if (mergeCandidate.outgoingMergeInfo.additionalElementsOutgoing.some(item => currentCandidate.incomingMergeInfo.additionalElementsIncoming.includes(item))) {
+      currentCandidate.containedElements.concat(currentCandidate.outgoingMergeInfo.additionalElementsIncoming).concat(mergeCandidate.containedElements);
+      currentCandidate.incomingMergeInfo = mergeCandidate.incomingMergeInfo;
+      optimizationCandidates = optimizationCandidates.filter(item => item !== mergeCandidate);
+      changes = true;
+      break;
+    }
+  }
+  if (changes === true) {
+    return recursiveMerge(currentCandidate, optimizationCandidates);
+  }
+  return optimizationCandidates;
+}
+
+/**
+ * Iteratively determine if incoming elements of detected hybrid loop are suitable to be included in the runtime
+ *
+ * @param flow
+ * @returns dataflow
+ */
 function includePreviousTaskForDFEfficiency(flow) {
   console.log(flow);
   let currentTask = flow.sourceRef;
   if (['bpmn:ServiceTask', 'bpmn:ScriptTask', 'quantme:QuantumCircuitExecutionTask'].includes(currentTask.$type)
        && currentTask.incoming.length === 1 && currentTask.dataFactor) {
     let nextFlow = currentTask.incoming[0];
-    nextFlow.currentDF = flow.currentDF * currentTask.dataFactor;
-    if (flow.additionalElements.length === 0) {
-      nextFlow.additionalElements = [flow, currentTask];
+
+    // compute DF attributes for current task
+    nextFlow.currentDFIncoming = flow.currentDFIncoming * currentTask.dataFactor;
+    if (flow.additionalElementsIncoming.length === 0) {
+      nextFlow.additionalElementsIncoming = [flow, currentTask];
     } else {
-      nextFlow.additionalElements = flow.additionalElements;
-      nextFlow.additionalElements.push(flow, currentTask);
+      nextFlow.additionalElementsIncoming = flow.additionalElementsIncoming;
+      nextFlow.additionalElementsIncoming.push(flow, currentTask);
     }
-    if (nextFlow.currentDF > flow.bestDF) {
-      nextFlow.bestDF = nextFlow.currentDF;
-      nextFlow.bestPoint = nextFlow.additionalElements.length;
+    // if current DF improves overall DF, save current element as best
+    if (nextFlow.currentDFIncoming > flow.bestDFIncoming) {
+      nextFlow.bestDFIncoming = nextFlow.currentDFIncoming;
+      nextFlow.bestPointIncoming = nextFlow.additionalElementsIncoming.length;
     } else {
-      nextFlow.bestDF = flow.bestDF;
-      nextFlow.bestPoint = flow.bestPoint;
+      nextFlow.bestDFIncoming = flow.bestDFIncoming;
+      nextFlow.bestPointIncoming = flow.bestPointIncoming;
     }
     return includePreviousTaskForDFEfficiency(nextFlow);
   } else {
@@ -124,25 +170,34 @@ function includePreviousTaskForDFEfficiency(flow) {
   }
 }
 
+/**
+ * Iteratively determine if outgoing elements of detected hybrid loop are suitable to be included in the runtime
+ *
+ * @param flow
+ * @returns dataflow
+ */
 function includeNextTaskForDFEfficiency(flow) {
   console.log(flow);
   let currentTask = flow.targetRef;
   if (['bpmn:ServiceTask', 'bpmn:ScriptTask', 'quantme:QuantumCircuitExecutionTask'].includes(currentTask.$type)
     && currentTask.outgoing.length === 1 && currentTask.dataFactor) {
     let nextFlow = currentTask.outgoing[0];
-    nextFlow.currentDF = flow.currentDF * currentTask.dataFactor;
-    if (flow.additionalElements.length === 0) {
-      nextFlow.additionalElements = [flow, currentTask];
+
+    // compute DF attributes for current task
+    nextFlow.currentDFOutgoing = flow.currentDFOutgoing * currentTask.dataFactor;
+    if (flow.additionalElementsOutgoing.length === 0) {
+      nextFlow.additionalElementsOutgoing = [flow, currentTask];
     } else {
-      nextFlow.additionalElements = flow.additionalElements;
-      nextFlow.additionalElements.push(flow, currentTask);
+      nextFlow.additionalElementsOutgoing = flow.additionalElementsOutgoing;
+      nextFlow.additionalElementsOutgoing.push(flow, currentTask);
     }
-    if (nextFlow.currentDF < flow.bestDF) {
-      nextFlow.bestDF = nextFlow.currentDF;
-      nextFlow.bestPoint = nextFlow.additionalElements.length;
+    // if current DF improves overall DF, save current element as best
+    if (nextFlow.currentDFOutgoing < flow.bestDFOutgoing) {
+      nextFlow.bestDFOutgoing = nextFlow.currentDFOutgoing;
+      nextFlow.bestPointOutgoing = nextFlow.additionalElementsOutgoing.length;
     } else {
-      nextFlow.bestDF = flow.bestDF;
-      nextFlow.bestPoint = flow.bestPoint;
+      nextFlow.bestDFOutgoing = flow.bestDFOutgoing;
+      nextFlow.bestPointOutgoing = flow.bestPointOutgoing;
     }
     return includeNextTaskForDFEfficiency(nextFlow);
   } else {
@@ -169,59 +224,12 @@ async function generateCandidateGroup(groupBox, modeler) {
  * Generate an image representing the candidate encoded using base64
  *
  * @param optimizationCandidate the candidate to visualize
- * @param workflowXml the XML of the workflow the candidate belongs to
+ * @param modeler of the WF
  * @return the string containing the base64 encoded image
  */
-async function visualizeCandidate(optimizationCandidate, workflowXml) {
-  console.log('Visualizing optimization candidate: ', optimizationCandidate);
-
-  // create new modeler for the visualization
-  let modeler = await createModelerFromXml(workflowXml);
-  let modeling = modeler.get('modeling');
+async function visualizeCandidateGroup(optimizationCandidate, modeler) {
   let elementRegistry = modeler.get('elementRegistry');
-  let rootElement = getRootProcess(modeler.getDefinitions());
 
-  // remove all flows that are not part of the candidate
-  const flowElements = lodash.cloneDeep(rootElement.flowElements);
-  console.log('Workflow contains %d elements!', flowElements.length);
-  for (let i = 0; i < flowElements.length; i++) {
-    let flowElement = flowElements[i];
-    if (!optimizationCandidate.containedElements.some(e => e.id === flowElement.id)
-      && flowElement.$type === 'bpmn:SequenceFlow') {
-
-      // remove connection from the modeler
-      let element = elementRegistry.get(flowElement.id);
-      modeling.removeConnection(element);
-    }
-  }
-  console.log('%d elements after filtering sequence flow!', rootElement.flowElements.length);
-
-  // remove all shapes that are not part of the candidate
-  for (let i = 0; i < flowElements.length; i++) {
-    let flowElement = flowElements[i];
-    if (!optimizationCandidate.containedElements.some(e => e.id === flowElement.id)
-      && flowElement.$type !== 'bpmn:SequenceFlow') {
-
-      // remove shape from the modeler
-      let element = elementRegistry.get(flowElement.id);
-      modeling.removeShape(element);
-    }
-  }
-  console.log('Remaining workflow contains %d elements and candidate %d!', rootElement.flowElements.length, optimizationCandidate.containedElements.length);
-
-  // export the candidate as svg
-  function saveSvgWrapper() {
-    return new Promise((resolve) => {
-      modeler.saveSVG((err, successResponse) => {
-        resolve(successResponse);
-      });
-    });
-  }
-
-  let svg = await saveSvgWrapper();
-
-  // calculate view box for the SVG
-  svg = generateSVG(optimizationCandidate, svg, elementRegistry);
   const viewBox = calculateViewBox(optimizationCandidate, elementRegistry);
   let groupBox = {};
   groupBox.x = viewBox.minX - 25;
@@ -230,43 +238,9 @@ async function visualizeCandidate(optimizationCandidate, workflowXml) {
   groupBox.height = viewBox.maxY - viewBox.minY + 45;
 
   // generate png from svg
-  optimizationCandidate.candidateImage = generateImage('png', svg);
   optimizationCandidate.modeler = modeler;
   optimizationCandidate.groupBox = groupBox;
   return optimizationCandidate;
-}
-
-/**
- * Calculate the view box for the svg to visualize only the current candidate
- *
- * @param optimizationCandidate the optimization candidate to calculate the view box for
- * @param svg the svg to update the view box to visualize the optimization candidate
- * @param elementRegistry element registry of the modeler containing the complete workflow to access all contained elements
- * @return the updated svg with the calculated view box
- */
-function generateSVG(optimizationCandidate, svg, elementRegistry) {
-  let viewBox = calculateViewBox(optimizationCandidate, elementRegistry);
-
-  let width, height, x, y;
-  if (viewBox.minX === undefined || viewBox.minY === undefined || viewBox.maxX === undefined || viewBox.maxY === undefined) {
-    console.log('Error: unable to find modeling element with minimum and maximum x and y values!');
-
-    // default values in case an error occurred
-    width = 1000;
-    height = 1000;
-    x = 0;
-    y = 0;
-  } else {
-
-    // calculate view box and add a margin of 10 to the min/max values
-    x = viewBox.minX - 10;
-    y = viewBox.minY - 10;
-    width = viewBox.maxX - viewBox.minX + 20;
-    height = viewBox.maxY - viewBox.minY + 20;
-  }
-
-  return svg.replace('<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="0" height="0" viewBox="0 0 0 0" version="1.1">',
-    '<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="' + width + '" height="' + height + '" viewBox="' + x + ' ' + y + ' ' + width + ' ' + height + '" version="1.1">');
 }
 
 function calculateViewBox(optimizationCandidate, elementRegistry) {
@@ -425,11 +399,15 @@ function getOptimizationCandidate(candidate) {
       // store exit point and follow both outgoing paths to check if the end in the entry point forming a complete candidate
       candidate.exitPoint = candidate.currentElement;
 
+      // deepcopy leads to incomplete objects -> check suitability of first path on copy, afterwards analyze graph for corresponding path
+      let pathChoice = 1;
+
       // follow first path
       let pathOneCandidate = lodash.cloneDeep(candidate);
       let pathOneSequenceFlow = candidate.currentElement.outgoing[0];
       let pathOneNextElement = pathOneSequenceFlow.targetRef;
       pathOneCandidate.expression = pathOneSequenceFlow.conditionExpression;
+      console.log('type',typeof candidate.currentElement);
       pathOneCandidate.containedElements.push(candidate.currentElement, pathOneSequenceFlow);
       pathOneCandidate.currentElement = pathOneNextElement;
       let pathOneResult = getOptimizationCandidate(pathOneCandidate);
@@ -437,15 +415,18 @@ function getOptimizationCandidate(candidate) {
       // check if candidate is complete or invalid
       if (pathOneResult !== undefined) {
         console.log('Found suitable candidate loop!');
-        return pathOneResult;
+        pathChoice = 0;
+      } else {
+        console.log('First path did not result in valid candidate. Following second path...');
       }
-      console.log('First path did not result in valid candidate. Following second path...');
+
 
       // follow second path
       let pathTwoCandidate = candidate;
-      let pathTwoSequenceFlow = candidate.currentElement.outgoing[1];
+      let pathTwoSequenceFlow = candidate.currentElement.outgoing[pathChoice];
       let pathTwoNextElement = pathTwoSequenceFlow.targetRef;
       pathTwoCandidate.expression = pathTwoSequenceFlow.conditionExpression;
+      console.log('type',typeof candidate.currentElement);
       pathTwoCandidate.containedElements.push(candidate.currentElement, pathTwoSequenceFlow);
       pathTwoCandidate.currentElement = pathTwoNextElement;
       return getOptimizationCandidate(pathTwoCandidate);
@@ -453,6 +434,7 @@ function getOptimizationCandidate(candidate) {
       return undefined;
     }
   }
+  console.log('type',typeof candidate.currentElement);
   candidate.containedElements.push(candidate.currentElement);
 
   // get outgoing sequence flow of current element
