@@ -13,8 +13,6 @@ import lodash from 'lodash';
 import { getRootProcess } from 'client/src/app/quantme/utilities/Utilities';
 
 
-
-
 /**
  * Find candidates within the current workflow model that can be executed efficiently using a hybrid runtime
  *
@@ -60,7 +58,6 @@ export async function findOptimizationCandidates(modeler) {
     const preTasks = includePreviousTaskForDFEfficiency(incomingLoopFlow);
     const afterTasks = includeNextTaskForDFEfficiency(outgoingLoopFlow);
 
-    console.log('aftertasks', afterTasks, optimizationCandidate);
     if (preTasks.bestPointIncoming > 0) {
       optimizationCandidate.containedElements = optimizationCandidate.containedElements.concat(preTasks.additionalElementsIncoming.slice(0, preTasks.bestPointIncoming));
     }
@@ -70,8 +67,6 @@ export async function findOptimizationCandidates(modeler) {
     // save information of what service, script and execution tasks happened before and after the loop to merge multiple connected optimization candidates into 1 candidate
     optimizationCandidate.incomingMergeInfo = preTasks;
     optimizationCandidate.outgoingMergeInfo = afterTasks;
-    console.log('pretasks', preTasks);
-    console.log('aftertasks', afterTasks);
 
 
     // candidate must comprise at least one quantum circuit execution and classical task to benefit from a hybrid runtime
@@ -85,11 +80,10 @@ export async function findOptimizationCandidates(modeler) {
     }
   }
 
-  console.log(optimizationCandidates);
-  let newMergedCandidates = mergeOptimizationCandidates(optimizationCandidates);
-  console.log(newMergedCandidates);
-  optimizationCandidates = newMergedCandidates;
+  // merge candidates if they are overlapping
+  optimizationCandidates = mergeOptimizationCandidates(optimizationCandidates);
 
+  // draw hybrid runtime groups
   for (let candidate of optimizationCandidates) {
     candidate = await visualizeCandidateGroup(candidate, modeler);
     generateCandidateGroup(candidate.groupBox, modeler);
@@ -98,6 +92,12 @@ export async function findOptimizationCandidates(modeler) {
   return optimizationCandidates;
 }
 
+/**
+ * Checks for each candidate if there are merge possibilities with other candidates
+ *
+ * @param optimizationCandidates
+ * @returns {*}
+ */
 function mergeOptimizationCandidates(optimizationCandidates) {
   for (let i = 0; i < optimizationCandidates.length; i++) {
     optimizationCandidates = recursiveMerge(optimizationCandidates[i], optimizationCandidates);
@@ -105,6 +105,13 @@ function mergeOptimizationCandidates(optimizationCandidates) {
   return optimizationCandidates;
 }
 
+/**
+ * Recursively merge hybrid runtime candidates if they have overlapping tasks
+ *
+ * @param currentCandidate
+ * @param optimizationCandidates
+ * @returns {*}
+ */
 function recursiveMerge(currentCandidate, optimizationCandidates) {
   let changes = false;
   for (let mergeCandidate of optimizationCandidates) {
@@ -117,13 +124,16 @@ function recursiveMerge(currentCandidate, optimizationCandidates) {
 
       // remove merged candidate
       optimizationCandidates = optimizationCandidates.filter(item => item !== mergeCandidate);
-      console.log(currentCandidate, optimizationCandidates);
       changes = true;
       break;
     }
     if (mergeCandidate.outgoingMergeInfo.additionalElementsOutgoing.some(item => currentCandidate.incomingMergeInfo.additionalElementsIncoming.includes(item))) {
-      currentCandidate.containedElements.concat(currentCandidate.outgoingMergeInfo.additionalElementsIncoming).concat(mergeCandidate.containedElements);
-      currentCandidate.incomingMergeInfo = mergeCandidate.incomingMergeInfo;
+      currentCandidate.containedElements = currentCandidate.containedElements.concat(currentCandidate.outgoingMergeInfo.additionalElementsIncoming).concat(mergeCandidate.containedElements);
+      currentCandidate.containedElements = currentCandidate.containedElements.filter((item,index) => {
+        return (currentCandidate.containedElements.indexOf(item) === index); });
+      currentCandidate.outgoingMergeInfo = mergeCandidate.outgoingMergeInfo;
+
+      // remove merged candidate
       optimizationCandidates = optimizationCandidates.filter(item => item !== mergeCandidate);
       changes = true;
       break;
@@ -142,7 +152,6 @@ function recursiveMerge(currentCandidate, optimizationCandidates) {
  * @returns dataflow
  */
 function includePreviousTaskForDFEfficiency(flow) {
-  console.log(flow);
   let currentTask = flow.sourceRef;
   if (['bpmn:ServiceTask', 'bpmn:ScriptTask', 'quantme:QuantumCircuitExecutionTask'].includes(currentTask.$type)
        && currentTask.incoming.length === 1 && currentTask.dataFactor) {
@@ -177,7 +186,6 @@ function includePreviousTaskForDFEfficiency(flow) {
  * @returns dataflow
  */
 function includeNextTaskForDFEfficiency(flow) {
-  console.log(flow);
   let currentTask = flow.targetRef;
   if (['bpmn:ServiceTask', 'bpmn:ScriptTask', 'quantme:QuantumCircuitExecutionTask'].includes(currentTask.$type)
     && currentTask.outgoing.length === 1 && currentTask.dataFactor) {
@@ -221,7 +229,7 @@ async function generateCandidateGroup(groupBox, modeler) {
 }
 
 /**
- * Generate an image representing the candidate encoded using base64
+ * Add Groupbox for HybridRuntime Candidate
  *
  * @param optimizationCandidate the candidate to visualize
  * @param modeler of the WF
@@ -233,7 +241,7 @@ async function visualizeCandidateGroup(optimizationCandidate, modeler) {
   const viewBox = calculateViewBox(optimizationCandidate, elementRegistry);
   let groupBox = {};
   groupBox.x = viewBox.minX - 25;
-  groupBox.y = viewBox.minY - 25;
+  groupBox.y = viewBox.minY - 30;
   groupBox.width = viewBox.maxX - viewBox.minX + 45;
   groupBox.height = viewBox.maxY - viewBox.minY + 45;
 
@@ -243,6 +251,13 @@ async function visualizeCandidateGroup(optimizationCandidate, modeler) {
   return optimizationCandidate;
 }
 
+/**
+ * Compute Viewbox of Optimization Candidate
+ *
+ * @param optimizationCandidate
+ * @param elementRegistry
+ * @returns {{}}
+ */
 function calculateViewBox(optimizationCandidate, elementRegistry) {
   // search for the modeling elements with the minimal and maximal x and y values
   let result = {};
@@ -285,11 +300,6 @@ function calculateViewBox(optimizationCandidate, elementRegistry) {
       }
     }
   }
-
-  console.log('Minimum x value for candidate: ', result.minX);
-  console.log('Minimum y value for candidate: ', result.minY);
-  console.log('Maximum x value for candidate: ', result.maxX);
-  console.log('Maximum y value for candidate: ', result.maxY);
   return result;
 }
 
@@ -407,7 +417,6 @@ function getOptimizationCandidate(candidate) {
       let pathOneSequenceFlow = candidate.currentElement.outgoing[0];
       let pathOneNextElement = pathOneSequenceFlow.targetRef;
       pathOneCandidate.expression = pathOneSequenceFlow.conditionExpression;
-      console.log('type',typeof candidate.currentElement);
       pathOneCandidate.containedElements.push(candidate.currentElement, pathOneSequenceFlow);
       pathOneCandidate.currentElement = pathOneNextElement;
       let pathOneResult = getOptimizationCandidate(pathOneCandidate);
@@ -426,7 +435,6 @@ function getOptimizationCandidate(candidate) {
       let pathTwoSequenceFlow = candidate.currentElement.outgoing[pathChoice];
       let pathTwoNextElement = pathTwoSequenceFlow.targetRef;
       pathTwoCandidate.expression = pathTwoSequenceFlow.conditionExpression;
-      console.log('type',typeof candidate.currentElement);
       pathTwoCandidate.containedElements.push(candidate.currentElement, pathTwoSequenceFlow);
       pathTwoCandidate.currentElement = pathTwoNextElement;
       return getOptimizationCandidate(pathTwoCandidate);
@@ -434,7 +442,6 @@ function getOptimizationCandidate(candidate) {
       return undefined;
     }
   }
-  console.log('type',typeof candidate.currentElement);
   candidate.containedElements.push(candidate.currentElement);
 
   // get outgoing sequence flow of current element
