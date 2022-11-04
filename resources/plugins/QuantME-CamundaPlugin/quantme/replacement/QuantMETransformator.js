@@ -25,6 +25,7 @@ import * as Constants from 'client/src/app/quantme/Constants';
 import { replaceHardwareSelectionSubprocess } from './hardware-selection/QuantMEHardwareSelectionHandler';
 import { getQiskitRuntimeProgramDeploymentModel } from '../../adaptation/runtimes/QiskitRuntimeHandler';
 import { getAWSRuntimeProgramDeploymentModel } from '../../adaptation/runtimes/AwsRuntimeHandler';
+import { config } from 'chai';
 
 /**
  * Initiate the replacement process for the QuantME tasks that are contained in the current process model
@@ -158,6 +159,8 @@ export async function startReplacementProcess(xml, currentQRMs, endpointConfig) 
       }
     }
 
+
+
     // remove unused sequence flow elements from group modeler to avoid reference errors
     for (let flowElement of rootElement.flowElements) {
       if (!elementIdsInGroup.includes(flowElement.id) && flowElement.$type === 'bpmn:SequenceFlow') {
@@ -173,16 +176,18 @@ export async function startReplacementProcess(xml, currentQRMs, endpointConfig) 
       }
     }
     groupModeling.removeShape(groupElementRegistry.get(hybridRuntimeGroup.group.id));
+    //modeling.removeShape(elementRegistry.get(hybridRuntimeGroup.group.id));
 
-    console.log(groupElementRegistry);
+
+    let candidate = { containedElements: elementsInGroup, currentElement: entrypoint, entryPoint: entrypoint, exitPoint: exit, modeler: groupModeler };
 
     let programGenerationResult;
     switch (hybridRuntimeGroup.group.runtimeProvider) {
     case 'qiskit':
-      programGenerationResult = await getQiskitRuntimeProgramDeploymentModel(groupModeler, currentQRMs);
+      programGenerationResult = await getQiskitRuntimeProgramDeploymentModel(candidate, endpointConfig, currentQRMs);
       break;
     case 'aws':
-      programGenerationResult = await getAWSRuntimeProgramDeploymentModel(elementsInGroup, currentQRMs);
+      programGenerationResult = await getAWSRuntimeProgramDeploymentModel(elementsInGroup, endpointConfig, currentQRMs);
       break;
     default:
       programGenerationResult = { error: 'Unable to find suitable runtime handler for: ' + hybridRuntimeGroup.group.runtimeProvider };

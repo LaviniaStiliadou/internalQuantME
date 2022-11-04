@@ -23,7 +23,7 @@ export function getTaskOrder(candidate, modeler) {
 
   // lists to store task before/after looping gateway
   let beforeLoop = [];
-  let afterLoop = [];
+  let loopCondition = [];
   let beforeLoopGateway = [];
   let afterLoopGateway = [];
 
@@ -31,27 +31,75 @@ export function getTaskOrder(candidate, modeler) {
   let elementRegistry = modeler.get('elementRegistry');
   let element = elementRegistry.get(candidate.entryPoint.id).businessObject;
 
+
+
   // search all tasks before looping gateway
-  while (element.id !== candidate.exitPoint.id) {
-    if (element.$type === 'bpmn:ScriptTask' || element.$type === 'bpmn:ServiceTask') {
-      beforeLoopGateway.push(element.id);
+  while (element !== undefined) {
+    let localBeforeLoop = collectElementsBeforeGateway(element);
+    // skip lastTaskBeforeLoop if there are 2 loops right after each other
+    let lastTaskBeforeLoop = localBeforeLoop.length > 0 ? localBeforeLoop[localBeforeLoop.length - 1] : undefined ;
+
+
+    let loopStartGateway;
+    if (lastTaskBeforeLoop !== undefined) {
+      beforeLoop.push(localBeforeLoop);
+
+      // break loop if task is last task of hybrid group
+      if (lastTaskBeforeLoop.id === candidate.exitPoint.id) {
+        break;
+      }
+      loopStartGateway = getNextNonSequenceFlowElement(lastTaskBeforeLoop);
+    } else {
+      loopStartGateway = element;
     }
 
-    // get next element
-    element = getNextElement(element);
-  }
 
-  // search all tasks after looping gateway
-  while (element.id !== candidate.entryPoint.id) {
-    if (element.$type === 'bpmn:ScriptTask' || element.$type === 'bpmn:ServiceTask') {
-      afterLoopGateway.push(element.id);
+    // collect BeforeGatewayElements
+    let localBeforeGateway = collectElementsBeforeGateway(getNextElement(loopStartGateway));
+    beforeLoopGateway.push(localBeforeGateway);
+    let lastTaskBeforeStartGateway = localBeforeGateway.length > 0 ? localBeforeGateway[localBeforeGateway.length - 1] : undefined;
+    let loopEndGateway;
+
+    if (lastTaskBeforeStartGateway !== undefined) {
+      loopEndGateway = getNextNonSequenceFlowElement(lastTaskBeforeStartGateway);
+    } else {
+      loopEndGateway = getNextNonSequenceFlowElement(loopStartGateway);
     }
 
-    // get next element
-    element = getNextElement(element);
+    // find AfterGateway (but in loop) path and collect elements + save loop condition
+    let path0Elements = collectElementsBeforeGateway(loopEndGateway.outgoing[0]);
+    let path0End = path0Elements.length > 0 ? getNextNonSequenceFlowElement(path0Elements[path0Elements.length -1]) : getNextElement(loopEndGateway.outgoing[0]);
+    if (path0End !== undefined && path0End.id === loopStartGateway.id) {
+      afterLoopGateway.push(path0Elements);
+      loopCondition.push(loopEndGateway.outgoing[0].conditionExpression);
+      element = getNextNonSequenceFlowElement(loopEndGateway.outgoing[1]);
+    } else {
+      afterLoopGateway.push(collectElementsBeforeGateway(loopEndGateway.outgoing[1]));
+      loopCondition.push(loopEndGateway.outgoing[1].conditionExpression);
+      element = getNextNonSequenceFlowElement(loopEndGateway.outgoing[0]);
+    }
   }
 
-  return { beforeLoop: beforeLoopGateway, afterLoop: afterLoopGateway };
+  return { beforeLoop: beforeLoop, loopCondition: loopCondition, beforeLoopGateway: beforeLoopGateway, afterLoopGateway: afterLoopGateway };
+}
+
+function collectElementsBeforeGateway(currentEl) {
+  let beforeLoopList = [];
+  while (currentEl !== undefined && currentEl.$type !== 'bpmn:ExclusiveGateway') {
+    if (currentEl.$type === 'bpmn:ScriptTask' || currentEl.$type === 'bpmn:ServiceTask') {
+      beforeLoopList.push(currentEl);
+    }
+    currentEl = getNextElement(currentEl);
+  }
+  return beforeLoopList;
+}
+
+function getNextNonSequenceFlowElement(element) {
+  let next = getNextElement(element);
+  if (next === undefined) {
+    return undefined;
+  }
+  return next.$type === 'bpmn:SequenceFlow'? getNextElement(next) : next;
 }
 
 /**
@@ -64,7 +112,11 @@ function getNextElement(element) {
   if (element.$type === 'bpmn:SequenceFlow') {
     return element.targetRef;
   } else {
-    return element.outgoing[0];
+    if (element.outgoing === undefined) {
+      return undefined;
+    } else {
+      return element.outgoing[0];
+    }
   }
 }
 

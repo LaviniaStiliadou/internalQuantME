@@ -25,23 +25,15 @@ import { getInvalidModelingConstruct, getRequiredPrograms, getTaskOrder } from '
 /**
  * Generate a Qiskit Runtime program for the given candidate
  *
- * @param candidateModeler the candidate's Modeler to generate the Qiskit Runtime program for
- * @param modelerConfig current configuration of the modeler TODO adjust
+ * @param candidate the candidate's Modeler to generate the Qiskit Runtime program for
+ * @param config current configuration of the modeler
  * @param qrms the set of QRMs currently available in the framework
  * @return the updated candidate with the URL to the deployment model for the generated Qiskit Runtime program or an error message if the generation fails
  */
-export async function getQiskitRuntimeProgramDeploymentModel(candidateModeler, qrms) {
-  console.log(candidateModeler.config);
-  let candidateModeling = candidateModeler.get('modeling');
-  let candidateElementRegistry = candidateModeler.get('elementRegistry');
-  let candidateDefinitions = candidateModeler.getDefinitions();
-  let candidateRootElement = getRootProcess(candidateDefinitions);
-
-  let rootBo = candidateElementRegistry.get(candidateRootElement.id);
-  console.log(rootBo);
-
+export async function getQiskitRuntimeProgramDeploymentModel(candidate, config, qrms) {
+  console.log(candidate);
   // check if all contained QuantumCircuitExecutionTasks belong to an execution with IBMQ as provider
-  let quantumCircuitExecutionTasks = getQuantumCircuitExecutionTasks(candidateRootElement.flowElements);
+  let quantumCircuitExecutionTasks = getQuantumCircuitExecutionTasks(candidate.containedElements);
   for (let i = 0; i < quantumCircuitExecutionTasks.length; i++) {
     if (quantumCircuitExecutionTasks[i].provider.toUpperCase() !== 'IBMQ') {
       console.log('Found QuantumCircuitExecutionTask with provider different than IBMQ: ', quantumCircuitExecutionTasks[i].provider);
@@ -52,7 +44,7 @@ export async function getQiskitRuntimeProgramDeploymentModel(candidateModeler, q
   // extract workflow XML
   function exportXmlWrapper() {
     return new Promise((resolve) => {
-      candidateModeler.saveXML((err, successResponse) => {
+      candidate.modeler.saveXML((err, successResponse) => {
         resolve(successResponse);
       });
     });
@@ -62,7 +54,7 @@ export async function getQiskitRuntimeProgramDeploymentModel(candidateModeler, q
 
   console.log(xml);
   // transform QuantME tasks within candidate
-  let transformationResult = await startReplacementProcess(xml, qrms, candidateModeler.config);
+  let transformationResult = await startReplacementProcess(xml, qrms, config);
   if (transformationResult.status === 'failed') {
     console.log('Unable to transform QuantME tasks within the candidates!');
     return { error: 'Unable to transform QuantME tasks within the candidates. Please provide valid QRMs!' };
@@ -80,20 +72,20 @@ export async function getQiskitRuntimeProgramDeploymentModel(candidateModeler, q
   }
 
   // check if all service tasks have either a deployment model attached and all script tasks provide the code inline and retrieve the files
-  let requiredPrograms = await getRequiredPrograms(rootElement, candidateModeler.config.wineryEndpoint);
+  let requiredPrograms = await getRequiredPrograms(rootElement, config.wineryEndpoint);
   if (requiredPrograms.error !== undefined) {
     return { error: requiredPrograms.error };
   }
 
   // invoke handler and return resulting hybrid program or error message
-  let runtimeGenerationResult = await invokeQiskitRuntimeHandler(candidateModeler, requiredPrograms, candidateModeler.config.qiskitRuntimeHandlerEndpoint,
-    candidateModeler.config.hybridRuntimeProvenance, modeler);
+  let runtimeGenerationResult = await invokeQiskitRuntimeHandler(candidate, requiredPrograms, config.qiskitRuntimeHandlerEndpoint,
+    config.hybridRuntimeProvenance, modeler);
   if (runtimeGenerationResult.error !== undefined) {
     return { error: runtimeGenerationResult.error };
   }
 
   // generate the deployment model to deploy the Qiskit Runtime program and the corresponding agent
-  let deploymentModelUrl = await createDeploymentModel(candidateModeler, runtimeGenerationResult, candidateModeler.config.wineryEndpoint);
+  let deploymentModelUrl = await createDeploymentModel(candidate, runtimeGenerationResult, config.wineryEndpoint);
   if (deploymentModelUrl.error !== undefined) {
     return { error: deploymentModelUrl.error };
   }
@@ -231,26 +223,35 @@ async function createDeploymentModel(candidate, programBlobs, wineryEndpoint) {
  * @return the generated Qiskit Runtime program if successful, an error message otherwise
  */
 async function invokeQiskitRuntimeHandler(candidate, requiredPrograms, qiskitRuntimeHandlerEndpoint, provenanceCollection, modeler) {
+  console.log(candidate);
 
   // remove trailing slash from endpoint
   qiskitRuntimeHandlerEndpoint = qiskitRuntimeHandlerEndpoint.endsWith('/') ? qiskitRuntimeHandlerEndpoint.slice(0, -1) : qiskitRuntimeHandlerEndpoint;
 
   // calculate the order of the tasks within the candidate required for the generation in the Qiskit Runtime handler
   let taskOrder = getTaskOrder(candidate, modeler);
-  let beforeLoop, afterLoop = null;
+  let beforeLoop, beforeLoopGateway, afterLoopGateway, loopCondition = null;
   if (taskOrder.beforeLoop.length !== 0) {
     beforeLoop = taskOrder.beforeLoop.toString();
   }
-  if (taskOrder.afterLoop.length !== 0) {
-    afterLoop = taskOrder.afterLoop.toString();
+  if (taskOrder.beforeLoopGateway.length !== 0) {
+    beforeLoopGateway = taskOrder.beforeLoopGateway.toString();
   }
+  if (taskOrder.afterLoopGateway.length !== 0) {
+    afterLoopGateway = taskOrder.afterLoopGateway.toString();
+  }
+  if (taskOrder.loopCondition.length !== 0) {
+    loopCondition = taskOrder.loopCondition.toString();
+  }
+
 
   // create request containing information about the candidate and sent to Qiskit Runtime handler
   // eslint-disable-next-line no-undef
   const fd = new FormData();
   fd.append('beforeLoop', beforeLoop);
-  fd.append('afterLoop', afterLoop);
-  fd.append('loopCondition', candidate.expression.body);
+  fd.append('beforeLoopGateway', beforeLoopGateway);
+  fd.append('afterLoopGateway', afterLoopGateway);
+  fd.append('loopCondition', loopCondition);
   fd.append('requiredPrograms', requiredPrograms.programs);
   fd.append('provenanceCollection', provenanceCollection);
   try {
