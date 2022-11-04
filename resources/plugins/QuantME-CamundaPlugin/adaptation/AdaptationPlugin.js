@@ -34,9 +34,6 @@ export default class AdaptationPlugin extends PureComponent {
 
     this.state = defaultState;
 
-    this.handleAdaptationClosed = this.handleAdaptationClosed.bind(this);
-    this.handleRewriteClosed = this.handleRewriteClosed.bind(this);
-
     // get QuantME component from the backend, e.g., to retrieve current QRMs
     this.quantME = props._getGlobal('quantME');
 
@@ -219,6 +216,21 @@ export default class AdaptationPlugin extends PureComponent {
     this.setState({ rewriteOpen: false });
   }
 
+
+  async createHybridLoopStuff() {
+    const optimizationCandidates = await findOptimizationCandidates(this.modeler);
+    if (optimizationCandidates === undefined || optimizationCandidates.length === 0) {
+      console.log('Unable to find suitable optimization candidates!');
+
+      // TODO visualize error message
+      // result.refs.noCandidateDivRef.current.hidden = false;
+    } else {
+      console.log('Found %d optimization candidates within the workflow!', optimizationCandidates.length);
+
+      this.candidateList = optimizationCandidates;
+    }
+  }
+
   render() {
 
     // render loop analysis button and pop-up menu
@@ -226,7 +238,7 @@ export default class AdaptationPlugin extends PureComponent {
       <Fill slot="toolbar">
         <button type="button" className="src-app-primitives-Button__Button--3Ffn0"
           title="Open menu to analyse and improve hybrid loops"
-          onClick={() => this.setState({ adaptationOpen: true })}>
+          onClick={() => this.createHybridLoopStuff()}>
           <span className="hybrid-loop-adaptation"><span className="indent">Improve Hybrid Loops</span></span>
         </button>
       </Fill>

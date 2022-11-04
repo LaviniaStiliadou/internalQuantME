@@ -25,12 +25,96 @@ import { getInvalidModelingConstruct, getRequiredPrograms, getTaskOrder } from '
 /**
  * Generate a Qiskit Runtime program for the given candidate
  *
+ * @param candidateModeler the candidate's Modeler to generate the Qiskit Runtime program for
+ * @param modelerConfig current configuration of the modeler TODO adjust
+ * @param qrms the set of QRMs currently available in the framework
+ * @return the updated candidate with the URL to the deployment model for the generated Qiskit Runtime program or an error message if the generation fails
+ */
+export async function getQiskitRuntimeProgramDeploymentModel(candidateModeler, qrms) {
+  console.log(candidateModeler.config);
+  let candidateModeling = candidateModeler.get('modeling');
+  let candidateElementRegistry = candidateModeler.get('elementRegistry');
+  let candidateDefinitions = candidateModeler.getDefinitions();
+  let candidateRootElement = getRootProcess(candidateDefinitions);
+
+  let rootBo = candidateElementRegistry.get(candidateRootElement.id);
+  console.log(rootBo);
+
+  // check if all contained QuantumCircuitExecutionTasks belong to an execution with IBMQ as provider
+  let quantumCircuitExecutionTasks = getQuantumCircuitExecutionTasks(candidateRootElement.flowElements);
+  for (let i = 0; i < quantumCircuitExecutionTasks.length; i++) {
+    if (quantumCircuitExecutionTasks[i].provider.toUpperCase() !== 'IBMQ') {
+      console.log('Found QuantumCircuitExecutionTask with provider different than IBMQ: ', quantumCircuitExecutionTasks[i].provider);
+      return { error: 'Only QuantumCircuitExecutionTasks with provider IBMQ supported for Qiskit Runtime!' };
+    }
+  }
+
+  // extract workflow XML
+  function exportXmlWrapper() {
+    return new Promise((resolve) => {
+      candidateModeler.saveXML((err, successResponse) => {
+        resolve(successResponse);
+      });
+    });
+  }
+
+  let xml = await exportXmlWrapper();
+
+  console.log(xml);
+  // transform QuantME tasks within candidate
+  let transformationResult = await startReplacementProcess(xml, qrms, candidateModeler.config);
+  if (transformationResult.status === 'failed') {
+    console.log('Unable to transform QuantME tasks within the candidates!');
+    return { error: 'Unable to transform QuantME tasks within the candidates. Please provide valid QRMs!' };
+  }
+
+  // import transformed XML to the modeler
+  let modeler = await createModelerFromXml(transformationResult.xml);
+  let rootElement = getRootProcess(modeler.getDefinitions());
+
+  // check if transformed XML contains invalid modeling constructs
+  let invalidModelingConstruct = getInvalidModelingConstruct(rootElement);
+  if (invalidModelingConstruct !== undefined) {
+    console.log('Found invalid modeling construct of type: ', invalidModelingConstruct.$type);
+    return { error: 'Modeling construct not suitable for Qiskit Runtime program generation: ' + invalidModelingConstruct.$type };
+  }
+
+  // check if all service tasks have either a deployment model attached and all script tasks provide the code inline and retrieve the files
+  let requiredPrograms = await getRequiredPrograms(rootElement, candidateModeler.config.wineryEndpoint);
+  if (requiredPrograms.error !== undefined) {
+    return { error: requiredPrograms.error };
+  }
+
+  // invoke handler and return resulting hybrid program or error message
+  let runtimeGenerationResult = await invokeQiskitRuntimeHandler(candidateModeler, requiredPrograms, candidateModeler.config.qiskitRuntimeHandlerEndpoint,
+    candidateModeler.config.hybridRuntimeProvenance, modeler);
+  if (runtimeGenerationResult.error !== undefined) {
+    return { error: runtimeGenerationResult.error };
+  }
+
+  // generate the deployment model to deploy the Qiskit Runtime program and the corresponding agent
+  let deploymentModelUrl = await createDeploymentModel(candidateModeler, runtimeGenerationResult, candidateModeler.config.wineryEndpoint);
+  if (deploymentModelUrl.error !== undefined) {
+    return { error: deploymentModelUrl.error };
+  }
+  console.log('Received deployment model URL: ', deploymentModelUrl.deploymentModelUrl);
+  candidate.deploymentModelUrl = deploymentModelUrl.deploymentModelUrl;
+
+  console.log('Hybrid program has ID: ', runtimeGenerationResult.hybridProgramId);
+  candidate.hybridProgramId = runtimeGenerationResult.hybridProgramId;
+
+  // return candidate with added deployment model URL
+  return candidate;
+
+}/**
+ * Generate a Qiskit Runtime program for the given candidate
+ *
  * @param candidate the candidate to generate the Qiskit Runtime program for
  * @param modelerConfig current configuration of the modeler
  * @param qrms the set of QRMs currently available in the framework
  * @return the updated candidate with the URL to the deployment model for the generated Qiskit Runtime program or an error message if the generation fails
  */
-export async function getQiskitRuntimeProgramDeploymentModel(candidate, modelerConfig, qrms) {
+export async function getQiskitRuntimeProgramDeploymentModelOld(candidate, modelerConfig, qrms) {
 
   // check if all contained QuantumCircuitExecutionTasks belong to an execution with IBMQ as provider
   let quantumCircuitExecutionTasks = getQuantumCircuitExecutionTasks(candidate.containedElements);

@@ -24,6 +24,8 @@ export function getTaskOrder(candidate, modeler) {
   // lists to store task before/after looping gateway
   let beforeLoop = [];
   let afterLoop = [];
+  let beforeLoopGateway = [];
+  let afterLoopGateway = [];
 
   // get entry point from the current modeler
   let elementRegistry = modeler.get('elementRegistry');
@@ -32,7 +34,7 @@ export function getTaskOrder(candidate, modeler) {
   // search all tasks before looping gateway
   while (element.id !== candidate.exitPoint.id) {
     if (element.$type === 'bpmn:ScriptTask' || element.$type === 'bpmn:ServiceTask') {
-      beforeLoop.push(element.id);
+      beforeLoopGateway.push(element.id);
     }
 
     // get next element
@@ -42,14 +44,14 @@ export function getTaskOrder(candidate, modeler) {
   // search all tasks after looping gateway
   while (element.id !== candidate.entryPoint.id) {
     if (element.$type === 'bpmn:ScriptTask' || element.$type === 'bpmn:ServiceTask') {
-      afterLoop.push(element.id);
+      afterLoopGateway.push(element.id);
     }
 
     // get next element
     element = getNextElement(element);
   }
 
-  return { beforeLoop: beforeLoop, afterLoop: afterLoop };
+  return { beforeLoop: beforeLoopGateway, afterLoop: afterLoopGateway };
 }
 
 /**

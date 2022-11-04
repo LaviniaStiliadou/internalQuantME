@@ -23,6 +23,8 @@ import { getDefinitionsFromXml, createModelerFromXml } from '../Utilities';
 import { addQuantMEInputParameters } from 'client/src/app/quantme/replacement/InputOutputHandler';
 import * as Constants from 'client/src/app/quantme/Constants';
 import { replaceHardwareSelectionSubprocess } from './hardware-selection/QuantMEHardwareSelectionHandler';
+import { getQiskitRuntimeProgramDeploymentModel } from '../../adaptation/runtimes/QiskitRuntimeHandler';
+import { getAWSRuntimeProgramDeploymentModel } from '../../adaptation/runtimes/AwsRuntimeHandler';
 
 /**
  * Initiate the replacement process for the QuantME tasks that are contained in the current process model
@@ -35,6 +37,7 @@ export async function startReplacementProcess(xml, currentQRMs, endpointConfig) 
   let modeler = await createModelerFromXml(xml);
   let modeling = modeler.get('modeling');
   let elementRegistry = modeler.get('elementRegistry');
+  console.log(elementRegistry, modeling, modeler, currentQRMs);
 
   // get root element of the current diagram
   const definitions = modeler.getDefinitions();
@@ -45,7 +48,7 @@ export async function startReplacementProcess(xml, currentQRMs, endpointConfig) 
     return { status: 'failed', cause: 'Unable to retrieve root process element from definitions!' };
   }
 
-  // get all QuantME modeling constructs from the process
+  // get all QuantME modeling constructs from the process TODO might need to be careful with constructs in loop
   const replacementConstructs = getQuantMETasks(rootElement, elementRegistry);
   console.log('Process contains ' + replacementConstructs.length + ' QuantME modeling constructs to replace...');
   if (!replacementConstructs || !replacementConstructs.length) {
@@ -56,22 +59,25 @@ export async function startReplacementProcess(xml, currentQRMs, endpointConfig) 
   const hybridRuntimeGroups = getHybridRuntimeGroups(rootElement, elementRegistry);
 
   for (let hybridRuntimeGroup of hybridRuntimeGroups) {
+    let groupModeler = await createModelerFromXml(xml);
+    groupModeler.config = endpointConfig;
+    let groupModeling = groupModeler.get('modeling');
+    let groupElementRegistry = groupModeler.get('elementRegistry');
+    const groupDefinitions = groupModeler.getDefinitions();
+    const groupRootElement = getRootProcess(groupDefinitions);
+
     let groupElement = elementRegistry.get(hybridRuntimeGroup.group.id);
     let groupX, groupY, groupWidth, groupHeight;
     groupX= groupElement.x;
     groupY = groupElement.y;
     groupWidth = groupElement.width;
     groupHeight = groupElement.height;
-    console.log(groupElement);
-    console.log(groupX, groupY, groupWidth, groupHeight);
 
     let elementsInGroup = [];
     let elementIdsInGroup =[];
     for (let flowElement of rootElement.flowElements) {
       if (flowElement.$type !== 'bpmn:StartEvent' && flowElement.$type !== 'bpmn:EndEvent') {
-        console.log(flowElement);
         let flowElementBo = elementRegistry.get(flowElement.id);
-        console.log(flowElementBo);
         // check for each sequence flow if all points are within the group
         if (flowElementBo.waypoints) {
           let inside = true;
@@ -122,12 +128,6 @@ export async function startReplacementProcess(xml, currentQRMs, endpointConfig) 
       }
     }
 
-    let provider = hybridRuntimeGroup.group.provider;
-
-
-    console.log(elementsInGroup);
-    console.log(elementIdsInGroup);
-    console.log(elementsInGroup[0]);
     // check for incoming and outgoing elements that are not part of the group --> set entry and exitpoint
     let entrypoint, exit;
     for (let el of elementsInGroup) {
@@ -157,10 +157,41 @@ export async function startReplacementProcess(xml, currentQRMs, endpointConfig) 
         }
       }
     }
-    console.log(entrypoint);
-    console.log(exit);
 
+    // remove unused sequence flow elements from group modeler to avoid reference errors
+    for (let flowElement of rootElement.flowElements) {
+      if (!elementIdsInGroup.includes(flowElement.id) && flowElement.$type === 'bpmn:SequenceFlow') {
+        console.log(flowElement, groupModeling);
+        groupModeling.removeConnection(groupElementRegistry.get(flowElement.id));
+      }
+    }
+    // remove remaining unused flowelements
+    for (let flowElement of groupRootElement.flowElements) {
+      if (!elementIdsInGroup.includes(flowElement.id) && flowElement.$type !== 'bpmn:SequenceFlow') {
+        console.log(flowElement, groupModeling);
+        groupModeling.removeShape(groupElementRegistry.get(flowElement.id));
+      }
+    }
+    groupModeling.removeShape(groupElementRegistry.get(hybridRuntimeGroup.group.id));
 
+    console.log(groupElementRegistry);
+
+    let programGenerationResult;
+    switch (hybridRuntimeGroup.group.runtimeProvider) {
+    case 'qiskit':
+      programGenerationResult = await getQiskitRuntimeProgramDeploymentModel(groupModeler, currentQRMs);
+      break;
+    case 'aws':
+      programGenerationResult = await getAWSRuntimeProgramDeploymentModel(elementsInGroup, currentQRMs);
+      break;
+    default:
+      programGenerationResult = { error: 'Unable to find suitable runtime handler for: ' + hybridRuntimeGroup.group.runtimeProvider };
+    }
+
+    // check if hybrid program generation was successful
+    if (programGenerationResult.error) {
+      console.log('Hybrid program generation failed with error: ', programGenerationResult.error);
+    }
 
 
 
@@ -207,8 +238,9 @@ export async function startReplacementProcess(xml, currentQRMs, endpointConfig) 
 
   // layout diagram after successful transformation
   layout(modeling, elementRegistry, rootElement);
-
-  return { status: 'transformed', xml: await exportXmlFromModeler(modeler) };
+  let newXML = await exportXmlFromModeler(modeler);
+  console.log(newXML);
+  return { status: 'transformed', xml: newXML };
 }
 
 /**
@@ -221,6 +253,9 @@ export function getHybridRuntimeGroups(process, elementRegistry) {
 
   const hybridRuntimeGroups = [];
   const artifacts = process.artifacts;
+  if (artifacts === undefined) {
+    return [];
+  }
   for (let i = 0; i < artifacts.length; i++) {
     let artifact = artifacts[i];
     if (artifact.$type && artifact.$type === 'quantme:HybridRuntimeGroup') {
@@ -282,6 +317,7 @@ async function replaceByFragment(definitions, task, parent, replacement, modeler
   // get the root process of the replacement fragment
   let replacementProcess = getRootProcess(await getDefinitionsFromXml(replacement));
   let replacementElement = getSingleFlowElement(replacementProcess);
+  console.log(replacementProcess, replacementElement);
   if (replacementElement === null || replacementElement === undefined) {
     console.log('Unable to retrieve QuantME task from replacement fragment: ', replacement);
     return false;
@@ -330,6 +366,7 @@ export function insertShape(definitions, parent, newElement, idMap, replace, mod
     } else {
 
       // create new shape for this element
+      modeling.removeShape();
       element = modeling.createShape({ type: newElement.$type }, { x: 50, y: 50 }, parent, {});
     }
   } else {

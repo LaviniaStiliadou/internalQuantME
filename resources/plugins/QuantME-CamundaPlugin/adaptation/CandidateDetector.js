@@ -43,6 +43,7 @@ export async function findOptimizationCandidates(modeler) {
       containedElements: [entryPoints[i], outgoingFlow]
     });
 
+    // TODO discuss how qc exec for different providers shall be handled
     // set starting points to include tasks at the start with DataFactor > 1, and at the end with DataFactor < 1.
     let loopExitPoint = optimizationCandidate.containedElements.find(element => element.$type === 'bpmn:ExclusiveGateway' && element.id !== entryPoint.id);
     let outgoingLoopFlow = optimizationCandidate.containedElements.includes(loopExitPoint.outgoing[1]) ? loopExitPoint.outgoing[0] : loopExitPoint.outgoing[1];

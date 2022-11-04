@@ -44,7 +44,7 @@
         "superClass": [ "bpmn:Group" ],
         "properties": [
           {
-            "name": "provider",
+            "name": "runtimeProvider",
             "isAttr": true,
             "type": "String"
           }

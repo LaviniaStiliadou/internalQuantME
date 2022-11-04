@@ -42,6 +42,7 @@ export default class QuantMEFactory extends BpmnFactory {
 
     // setting default for selectlist
     if (element.$type === HYBRID_RUNTIME_GROUP) {
+      console.log('set default hybrid runtime value to qiskit');
       element.runtimeProvider = 'qiskit';
     }
   }

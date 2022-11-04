@@ -19,7 +19,6 @@ let ModelUtil = require('bpmn-js/lib/util/ModelUtil');
  * @returns {boolean} true if attributes are available, otherwise false
  */
 export function requiredAttributesAvailable(element) {
-
   // return false if business object can not be retrieved
   let bo = ModelUtil.getBusinessObject(element);
   if (!bo) {
@@ -52,7 +51,7 @@ export function requiredAttributesAvailable(element) {
 
 function checkHybridRuntimeGroup(bo) {
   // TODO check validity of group
-  return !(typeof bo.provider === 'undefined');
+  return !(typeof bo.runtimeProvider === 'undefined');
 }
 
 function checkHardwareSelectionSubprocess(bo) {
