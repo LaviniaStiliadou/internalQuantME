@@ -251,6 +251,7 @@ export default class QuantMERenderer extends BpmnRenderer {
   }
 
   canRender(element) {
+
     // default elements can be handled
     if (super.canRender(element)) {
       return true;
@@ -269,6 +270,7 @@ export default class QuantMERenderer extends BpmnRenderer {
 
   drawShape(parentNode, element) {
     let camundaRendered;
+
     // handle QuantME elements
     if (element.type in this.quantMeHandlers) {
       var h = this.quantMeHandlers[element.type];

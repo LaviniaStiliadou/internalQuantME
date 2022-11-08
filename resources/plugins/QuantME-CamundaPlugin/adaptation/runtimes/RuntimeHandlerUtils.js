@@ -35,6 +35,7 @@ export function getTaskOrder(candidate, modeler) {
   // search all tasks before looping gateway
   while (element !== undefined) {
     let localBeforeLoop = collectElementsBeforeGateway(element);
+
     // skip lastTaskBeforeLoop if there are 2 loops right after each other
     let lastTaskBeforeLoop = localBeforeLoop.length > 0 ? localBeforeLoop[localBeforeLoop.length - 1] : undefined ;
 

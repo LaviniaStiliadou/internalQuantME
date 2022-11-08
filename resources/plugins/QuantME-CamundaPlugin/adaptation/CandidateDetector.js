@@ -65,6 +65,7 @@ export async function findOptimizationCandidates(modeler) {
     if (afterTasks.bestPointOutgoing > 0) {
       optimizationCandidate.containedElements = optimizationCandidate.containedElements.concat(afterTasks.additionalElementsOutgoing.slice(0, afterTasks.bestPointOutgoing));
     }
+
     // save information of what service, script and execution tasks happened before and after the loop to merge multiple connected optimization candidates into 1 candidate
     optimizationCandidate.incomingMergeInfo = preTasks;
     optimizationCandidate.outgoingMergeInfo = afterTasks;
@@ -89,6 +90,7 @@ export async function findOptimizationCandidates(modeler) {
     candidate = await visualizeCandidateGroup(candidate, modeler);
     generateCandidateGroup(candidate.groupBox, modeler);
   }
+
   // return all valid optimization candidates for the analysis and rewrite modal
   return optimizationCandidates;
 }
@@ -117,6 +119,7 @@ function recursiveMerge(currentCandidate, optimizationCandidates) {
   let changes = false;
   for (let mergeCandidate of optimizationCandidates) {
     if (mergeCandidate.incomingMergeInfo.additionalElementsIncoming.some(item => currentCandidate.outgoingMergeInfo.additionalElementsOutgoing.includes(item))) {
+
       // combine candidates and remove duplicates
       currentCandidate.containedElements = currentCandidate.containedElements.concat(currentCandidate.outgoingMergeInfo.additionalElementsOutgoing).concat(mergeCandidate.containedElements);
       currentCandidate.containedElements = currentCandidate.containedElements.filter((item,index) => {
@@ -166,6 +169,7 @@ function includePreviousTaskForDFEfficiency(flow) {
       nextFlow.additionalElementsIncoming = flow.additionalElementsIncoming;
       nextFlow.additionalElementsIncoming.push(flow, currentTask);
     }
+
     // if current DF improves overall DF, save current element as best
     if (nextFlow.currentDFIncoming > flow.bestDFIncoming) {
       nextFlow.bestDFIncoming = nextFlow.currentDFIncoming;
@@ -200,6 +204,7 @@ function includeNextTaskForDFEfficiency(flow) {
       nextFlow.additionalElementsOutgoing = flow.additionalElementsOutgoing;
       nextFlow.additionalElementsOutgoing.push(flow, currentTask);
     }
+
     // if current DF improves overall DF, save current element as best
     if (nextFlow.currentDFOutgoing < flow.bestDFOutgoing) {
       nextFlow.bestDFOutgoing = nextFlow.currentDFOutgoing;
@@ -260,6 +265,7 @@ async function visualizeCandidateGroup(optimizationCandidate, modeler) {
  * @returns {{}}
  */
 function calculateViewBox(optimizationCandidate, elementRegistry) {
+
   // search for the modeling elements with the minimal and maximal x and y values
   let result = {};
   for (let i = 0; i < optimizationCandidate.containedElements.length; i++) {

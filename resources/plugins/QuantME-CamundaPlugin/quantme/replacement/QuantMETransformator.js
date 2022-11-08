@@ -25,7 +25,6 @@ import * as Constants from 'client/src/app/quantme/Constants';
 import { replaceHardwareSelectionSubprocess } from './hardware-selection/QuantMEHardwareSelectionHandler';
 import { getQiskitRuntimeProgramDeploymentModel } from '../../adaptation/runtimes/QiskitRuntimeHandler';
 import { getAWSRuntimeProgramDeploymentModel } from '../../adaptation/runtimes/AwsRuntimeHandler';
-import { config } from 'chai';
 
 /**
  * Initiate the replacement process for the QuantME tasks that are contained in the current process model
@@ -81,6 +80,7 @@ export async function startReplacementProcess(xml, currentQRMs, endpointConfig, 
     for (let flowElement of groupRootElement.flowElements) {
       if (flowElement.$type !== 'bpmn:StartEvent' && flowElement.$type !== 'bpmn:EndEvent') {
         let flowElementBo = groupElementRegistry.get(flowElement.id);
+
         // check for each sequence flow if all points are within the group
         if (flowElementBo.waypoints) {
           let inside = true;
@@ -94,6 +94,7 @@ export async function startReplacementProcess(xml, currentQRMs, endpointConfig, 
             elementsInGroup.push(flowElement);
             elementIdsInGroup.push(flowElement.id);
           }
+
         // check for tasks and gateways if all corners of the element are within the group
         } else if (flowElementBo.x && flowElementBo.y && flowElementBo.width && flowElementBo.height) {
           if (flowElementBo.x > groupX && flowElementBo.x < groupX + groupWidth
@@ -109,6 +110,7 @@ export async function startReplacementProcess(xml, currentQRMs, endpointConfig, 
 
     console.log(elementsInGroup);
     console.log(elementIdsInGroup);
+
     // remove outer sequence flow if existing
     for (let el of elementsInGroup) {
       if (el.$type === 'bpmn:SequenceFlow') {
@@ -165,6 +167,7 @@ export async function startReplacementProcess(xml, currentQRMs, endpointConfig, 
 
     let groupFlowElements = [];
     groupRootElement.flowElements.forEach(flowElement => groupFlowElements.push({ id: flowElement.id, $type: flowElement.$type }));
+
     // remove unused sequence flow elements from group modeler to avoid reference errors
     for (let flowElement of groupFlowElements) {
       if (!elementIdsInGroup.includes(flowElement.id) && flowElement.$type === 'bpmn:SequenceFlow') {
@@ -172,6 +175,7 @@ export async function startReplacementProcess(xml, currentQRMs, endpointConfig, 
         groupModeling.removeConnection(groupElementRegistry.get(flowElement.id));
       }
     }
+
     // remove remaining unused flowelements
     for (let flowElement of groupFlowElements) {
       if (!elementIdsInGroup.includes(flowElement.id) && flowElement.$type !== 'bpmn:SequenceFlow') {
@@ -181,6 +185,7 @@ export async function startReplacementProcess(xml, currentQRMs, endpointConfig, 
         console.log(flowElement);
       }
     }
+
     // remove outside artifacts
     let artifactIds = [];
     for (let artifacts of groupRootElement.artifacts) {
@@ -236,8 +241,6 @@ export async function startReplacementProcess(xml, currentQRMs, endpointConfig, 
     }
   }
 
-  let candidateStart = candidate !== undefined ? candidate.entryPoint : undefined;
-  let candidateEnd = candidate !== undefined ? candidate.exitPoint : undefined;
   // replace each QuantME modeling construct to retrieve standard-compliant BPMN
   for (let replacementConstruct of replacementConstructs) {
 

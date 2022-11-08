@@ -32,6 +32,7 @@ import { getInvalidModelingConstruct, getRequiredPrograms, getTaskOrder } from '
  */
 export async function getQiskitRuntimeProgramDeploymentModel(candidate, config, qrms) {
   console.log(candidate);
+
   // check if all contained QuantumCircuitExecutionTasks belong to an execution with IBMQ as provider
   let quantumCircuitExecutionTasks = getQuantumCircuitExecutionTasks(candidate.containedElements);
   for (let i = 0; i < quantumCircuitExecutionTasks.length; i++) {
@@ -53,6 +54,7 @@ export async function getQiskitRuntimeProgramDeploymentModel(candidate, config, 
   let xml = await exportXmlWrapper();
 
   console.log(xml);
+
   // transform QuantME tasks within candidate
   let transformationResult = await startReplacementProcess(xml, qrms, config, candidate);
   if (transformationResult.status === 'failed') {

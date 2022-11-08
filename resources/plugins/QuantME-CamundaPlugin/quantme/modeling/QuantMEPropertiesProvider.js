@@ -108,6 +108,7 @@ function handleServiceTask(element, tabs, translate, bpmnFactory, wineryEndpoint
 }
 
 function handleTasks(element, tabs, translate) {
+
   // search for general tab in properties to add QuantME properties
   let generalTabWithId = findById(tabs, 'general');
 
@@ -156,6 +157,7 @@ function handleQuantMETasks(element, tabs, translate) {
   }
 
   console.log(generalTab);
+
   // add required properties to general tab
   const quantMEGroup = {
     id: 'quantme',

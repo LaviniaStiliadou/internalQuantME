@@ -19,6 +19,7 @@ let ModelUtil = require('bpmn-js/lib/util/ModelUtil');
  * @returns {boolean} true if attributes are available, otherwise false
  */
 export function requiredAttributesAvailable(element) {
+
   // return false if business object can not be retrieved
   let bo = ModelUtil.getBusinessObject(element);
   if (!bo) {

@@ -23,11 +23,13 @@ export default class QuantMEFactory extends BpmnFactory {
   }
 
   _ensureId(element) {
+
     // handle all non QuantME elements as usual
     if (!isQuantMETask(element)) {
       super._ensureId(element);
       return;
     }
+
     // add an Id to QuantME elements if not already defined
     if (!element.id) {
       var prefix = (element.$type || '').replace(/^[^:]*:/g, '') + '_';
