@@ -50,7 +50,6 @@ export function requiredAttributesAvailable(element) {
 }
 
 function checkHybridRuntimeGroup(bo) {
-  // TODO check validity of group
   return !(typeof bo.runtimeProvider === 'undefined');
 }
 

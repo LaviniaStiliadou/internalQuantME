@@ -60,7 +60,7 @@ export async function getQiskitRuntimeProgramDeploymentModel(candidate, config, 
     return { error: 'Unable to transform QuantME tasks within the candidates. Please provide valid QRMs!' };
   }
 
-  // TODO update candidate
+
   // import transformed XML to the modeler
   let modeler = await createModelerFromXml(transformationResult.xml);
   let rootElement = getRootProcess(modeler.getDefinitions());
