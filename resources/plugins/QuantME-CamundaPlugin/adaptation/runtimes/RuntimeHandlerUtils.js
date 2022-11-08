@@ -29,8 +29,7 @@ export function getTaskOrder(candidate, modeler) {
 
   // get entry point from the current modeler
   let elementRegistry = modeler.get('elementRegistry');
-  let element = elementRegistry.get(candidate.entryPoint.id).businessObject;
-
+  let element = elementRegistry.get(candidate.entryPointId).businessObject;
 
 
   // search all tasks before looping gateway
@@ -42,10 +41,12 @@ export function getTaskOrder(candidate, modeler) {
 
     let loopStartGateway;
     if (lastTaskBeforeLoop !== undefined) {
-      beforeLoop.push(localBeforeLoop);
+      let beforeLoopIds = [];
+      localBeforeLoop.forEach(task => beforeLoopIds.push(task.id));
+      beforeLoop.push(beforeLoopIds.toString());
 
       // break loop if task is last task of hybrid group
-      if (lastTaskBeforeLoop.id === candidate.exitPoint.id) {
+      if (lastTaskBeforeLoop.id === candidate.exitPointId) {
         break;
       }
       loopStartGateway = getNextNonSequenceFlowElement(lastTaskBeforeLoop);
@@ -56,7 +57,9 @@ export function getTaskOrder(candidate, modeler) {
 
     // collect BeforeGatewayElements
     let localBeforeGateway = collectElementsBeforeGateway(getNextElement(loopStartGateway));
-    beforeLoopGateway.push(localBeforeGateway);
+    let beforeGatewayIds = [];
+    localBeforeGateway.forEach(task => beforeGatewayIds.push(task.id));
+    beforeLoopGateway.push(beforeGatewayIds.toString());
     let lastTaskBeforeStartGateway = localBeforeGateway.length > 0 ? localBeforeGateway[localBeforeGateway.length - 1] : undefined;
     let loopEndGateway;
 
@@ -70,12 +73,16 @@ export function getTaskOrder(candidate, modeler) {
     let path0Elements = collectElementsBeforeGateway(loopEndGateway.outgoing[0]);
     let path0End = path0Elements.length > 0 ? getNextNonSequenceFlowElement(path0Elements[path0Elements.length -1]) : getNextElement(loopEndGateway.outgoing[0]);
     if (path0End !== undefined && path0End.id === loopStartGateway.id) {
-      afterLoopGateway.push(path0Elements);
-      loopCondition.push(loopEndGateway.outgoing[0].conditionExpression);
+      let afterGatewayIds = [];
+      path0Elements.forEach(task => afterGatewayIds.push(task.id));
+      afterLoopGateway.push(afterGatewayIds.toString());
+      loopCondition.push(loopEndGateway.outgoing[0].conditionExpression.body);
       element = getNextNonSequenceFlowElement(loopEndGateway.outgoing[1]);
     } else {
-      afterLoopGateway.push(collectElementsBeforeGateway(loopEndGateway.outgoing[1]));
-      loopCondition.push(loopEndGateway.outgoing[1].conditionExpression);
+      let afterGatewayIds = [];
+      collectElementsBeforeGateway(loopEndGateway.outgoing[1]).forEach(task => afterGatewayIds.push(task.id));
+      afterLoopGateway.push(afterGatewayIds.toString());
+      loopCondition.push(loopEndGateway.outgoing[1].conditionExpression.body);
       element = getNextNonSequenceFlowElement(loopEndGateway.outgoing[0]);
     }
   }
@@ -109,6 +116,9 @@ function getNextNonSequenceFlowElement(element) {
  * @return the next element
  */
 function getNextElement(element) {
+  if (element === undefined) {
+    return undefined;
+  }
   if (element.$type === 'bpmn:SequenceFlow') {
     return element.targetRef;
   } else {

@@ -54,15 +54,17 @@ export async function getQiskitRuntimeProgramDeploymentModel(candidate, config, 
 
   console.log(xml);
   // transform QuantME tasks within candidate
-  let transformationResult = await startReplacementProcess(xml, qrms, config);
+  let transformationResult = await startReplacementProcess(xml, qrms, config, candidate);
   if (transformationResult.status === 'failed') {
     console.log('Unable to transform QuantME tasks within the candidates!');
     return { error: 'Unable to transform QuantME tasks within the candidates. Please provide valid QRMs!' };
   }
 
+  // TODO update candidate
   // import transformed XML to the modeler
   let modeler = await createModelerFromXml(transformationResult.xml);
   let rootElement = getRootProcess(modeler.getDefinitions());
+  candidate.containedElements = rootElement.flowElements;
 
   // check if transformed XML contains invalid modeling constructs
   let invalidModelingConstruct = getInvalidModelingConstruct(rootElement);
@@ -230,18 +232,12 @@ async function invokeQiskitRuntimeHandler(candidate, requiredPrograms, qiskitRun
 
   // calculate the order of the tasks within the candidate required for the generation in the Qiskit Runtime handler
   let taskOrder = getTaskOrder(candidate, modeler);
-  let beforeLoop, beforeLoopGateway, afterLoopGateway, loopCondition = null;
-  if (taskOrder.beforeLoop.length !== 0) {
-    beforeLoop = taskOrder.beforeLoop.toString();
-  }
-  if (taskOrder.beforeLoopGateway.length !== 0) {
-    beforeLoopGateway = taskOrder.beforeLoopGateway.toString();
-  }
-  if (taskOrder.afterLoopGateway.length !== 0) {
-    afterLoopGateway = taskOrder.afterLoopGateway.toString();
-  }
+  let beforeLoop = createPythonArrayString(taskOrder.beforeLoop);
+  let beforeLoopGateway = createPythonArrayString(taskOrder.beforeLoopGateway);
+  let afterLoopGateway = createPythonArrayString(taskOrder.afterLoopGateway);
+  let loopCondition = [];
   if (taskOrder.loopCondition.length !== 0) {
-    loopCondition = taskOrder.loopCondition.toString();
+    loopCondition = '[' + taskOrder.loopCondition.toString() + ']';
   }
 
 
@@ -254,6 +250,7 @@ async function invokeQiskitRuntimeHandler(candidate, requiredPrograms, qiskitRun
   fd.append('loopCondition', loopCondition);
   fd.append('requiredPrograms', requiredPrograms.programs);
   fd.append('provenanceCollection', provenanceCollection);
+  console.log(fd);
   try {
     let generationResult = await performAjax(qiskitRuntimeHandlerEndpoint + '/qiskit-runtime-handler/api/v1.0/generate-hybrid-program', fd);
 
@@ -308,4 +305,20 @@ async function invokeQiskitRuntimeHandler(candidate, requiredPrograms, qiskitRun
   } catch (e) {
     return { error: 'Unable to connect to the Qiskit Runtime handler.\nPlease check the endpoint!' };
   }
+}
+
+function createPythonArrayString(arrayOfStrings) {
+  let pythonString = '';
+  if (arrayOfStrings.length !== 0) {
+    pythonString += '[';
+    for (let i = 0; i < arrayOfStrings.length; i++) {
+      if (i < arrayOfStrings.length -1) {
+        pythonString += '[' + arrayOfStrings[i] + '], ';
+      } else {
+        pythonString += '[' + arrayOfStrings[i] + ']';
+      }
+    }
+    pythonString += ']';
+  }
+  return pythonString;
 }
