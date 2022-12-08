@@ -185,7 +185,7 @@ async function invokeAWSRuntimeHandler(candidate, requiredPrograms, awsRuntimeHa
       let pollingResponse = await fetch(taskLocation);
       let pollingResponseJson = await pollingResponse.json();
 
-      if (pollingResponseJson['complete'] === true || timeout >= 20) {
+      if (pollingResponseJson['complete'] === true || timeout > 50) {
         complete = true;
         result = pollingResponseJson;
       }

@@ -81,7 +81,13 @@ export async function rewriteWorkflow(modeler, candidate, provenanceCollectionEn
 
   // calculate initial position of the new service task
   let x = calculatePosition(entryPoint.di.bounds.x, exitPoint.di.bounds.x);
+
+  // add the half of the service task width (100) to place the task in the middle of the sequence flow
+  x = x + 50;
   let y = calculatePosition(entryPoint.di.bounds.y, exitPoint.di.bounds.y);
+
+  // since we add a service task we have to adapt y based on the height of a exclusive gateway which is 50 and take the half of it
+  y = y + entryPoint.di.bounds.height / 2;
 
   // retrieve parent of the hybrid loop elements to add replacing service task
   let parent = elementRegistry.get(entryPoint.$parent.id);
