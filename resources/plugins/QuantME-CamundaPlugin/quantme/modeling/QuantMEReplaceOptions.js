@@ -21,6 +21,14 @@ export var TASK = [
     }
   },
   {
+    label: 'Circuit Cutting Subprocess',
+    actionName: 'replace-with-circuit-cutting-subprocess',
+    className: 'bpmn-icon-circuit-cutting',
+    target: {
+      type: consts.CIRCUIT_CUTTING_SUBPROCESS
+    }
+  },
+  {
     label: 'Quantum Computation Task',
     actionName: 'replace-with-quantum-computation-task',
     className: 'bpmn-icon-task-quantum-computation',
@@ -67,7 +75,39 @@ export var TASK = [
     target: {
       type: consts.READOUT_ERROR_MITIGATION_TASK
     }
-  }
+  },
+  {
+    label: 'Parameter Optimization Task',
+    actionName: 'replace-with-parameter-optimization-task',
+    className: 'bpmn-icon-parameter-optimization',
+    target: {
+      type: consts.PARAMETER_OPTIMIZATION_TASK
+    }
+  },
+  {
+    label: 'Result Evaluation Task',
+    actionName: 'replace-with-result-evaluation-task',
+    className: 'bpmn-icon-result-evaluation',
+    target: {
+      type: consts.RESULT_EVALUATION_TASK
+    }
+  },
+  {
+    label: 'Warm-Starting Task',
+    actionName: 'replace-with-warm-starting-task',
+    className: 'bpmn-icon-warm-starting',
+    target: {
+      type: consts.WARM_STARTING_TASK
+    }
+  },
+  {
+    label: 'Variational Quantum Algorithm Task',
+    actionName: 'replace-with-variational-quantum-algorithm-task',
+    className: 'bpmn-icon-variational-quantum-algorithm',
+    target: {
+      type: consts.VARIATIONAL_QUANTUM_ALGORITHM_TASK
+    }
+  },
 ];
 
 export var SUBPROCESS = [
@@ -77,6 +117,14 @@ export var SUBPROCESS = [
     className: 'bpmn-icon-hardware-selection-subprocess',
     target: {
       type: consts.QUANTUM_HARDWARE_SELECTION_SUBPROCESS
+    }
+  },
+  {
+    label: 'Circuit Cutting Subprocess',
+    actionName: 'replace-with-circuit-cutting-subprocess',
+    className: 'bpmn-icon-circuit-cutting',
+    target: {
+      type: consts.CIRCUIT_CUTTING_SUBPROCESS
     }
   }
 ];

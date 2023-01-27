@@ -23,6 +23,8 @@ import { getDefinitionsFromXml, createModelerFromXml } from '../Utilities';
 import { addQuantMEInputParameters } from 'client/src/app/quantme/replacement/InputOutputHandler';
 import * as Constants from 'client/src/app/quantme/Constants';
 import { replaceHardwareSelectionSubprocess } from './hardware-selection/QuantMEHardwareSelectionHandler';
+import { replaceCuttingSubprocess } from './circuit-cutting/QuantMECuttingHandler';
+import { CIRCUIT_CUTTING_SUBPROCESS } from 'client/src/app/quantme/Constants';
 
 /**
  * Initiate the replacement process for the QuantME tasks that are contained in the current process model
@@ -46,7 +48,7 @@ export async function startReplacementProcess(xml, currentQRMs, endpointConfig) 
   }
 
   // get all QuantME modeling constructs from the process
-  const replacementConstructs = getQuantMETasks(rootElement, elementRegistry);
+  let replacementConstructs = getQuantMETasks(rootElement, elementRegistry);
   console.log('Process contains ' + replacementConstructs.length + ' QuantME modeling constructs to replace...');
   if (!replacementConstructs || !replacementConstructs.length) {
     return { status: 'transformed', xml: xml };
@@ -70,7 +72,25 @@ export async function startReplacementProcess(xml, currentQRMs, endpointConfig) 
     }
   }
 
-  // replace each QuantME modeling construct to retrieve standard-compliant BPMN
+  // first replace cutting subprocesses and insert tasks
+  for (let replacementConstruct of replacementConstructs) {
+    let replacementSuccess = false;
+    if (replacementConstruct.task.$type === Constants.CIRCUIT_CUTTING_SUBPROCESS) {
+      replacementSuccess = await replaceCuttingSubprocess(replacementConstruct.task, replacementConstruct.parent, replacementConstruct.qrm.replacement, modeler, definitions, endpointConfig.transformationFrameworkEndpoint, endpointConfig.camundaEndpoint);
+      console.log('Successfully replaced Cutting Subprocess');
+      if (!replacementSuccess) {
+        console.log('Replacement of QuantME modeling construct with Id ' + replacementConstruct.task.id + ' failed. Aborting process!');
+        return {
+          status: 'failed',
+          cause: 'Replacement of QuantME modeling construct with Id ' + replacementConstruct.task.id + ' failed. Aborting process!'
+        };
+      }
+    }
+  }
+
+  // remove already replaced circuit cutting subprocesses from replacement list
+  replacementConstructs = replacementConstructs.filter(construct => construct.task.$type !== Constants.CIRCUIT_CUTTING_SUBPROCESS);
+
   for (let replacementConstruct of replacementConstructs) {
 
     let replacementSuccess = false;
@@ -114,7 +134,7 @@ export function getQuantMETasks(process, elementRegistry) {
     }
 
     // recursively retrieve QuantME tasks if subprocess is found
-    if (flowElement.$type && flowElement.$type === 'bpmn:SubProcess') {
+    if (flowElement.$type && (flowElement.$type === 'bpmn:SubProcess' || flowElement.$type === CIRCUIT_CUTTING_SUBPROCESS)) {
       Array.prototype.push.apply(quantmeTasks, getQuantMETasks(flowElement, elementRegistry));
     }
   }
@@ -283,7 +303,7 @@ export function insertShape(definitions, parent, newElement, idMap, replace, mod
  * @param modeler the BPMN modeler containing the target BPMN diagram
  * @return {{success: boolean, idMap: *, element: *}}
  */
-function insertChildElements(definitions, parent, newElement, idMap, modeler) {
+export function insertChildElements(definitions, parent, newElement, idMap, modeler) {
 
   let success = true;
   let flowElements = newElement.flowElements;

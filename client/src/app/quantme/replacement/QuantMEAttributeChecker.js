@@ -42,10 +42,40 @@ export function requiredAttributesAvailable(element) {
     return checkReadoutErrorMitigationTask(bo);
   case consts.QUANTUM_HARDWARE_SELECTION_SUBPROCESS:
     return checkHardwareSelectionSubprocess(bo);
+  case consts.PARAMETER_OPTIMIZATION_TASK:
+    return checkParameterOptimizationTask(bo);
+  case consts.WARM_STARTING_TASK:
+    return checkWarmStartingTask(bo);
+  case consts.RESULT_EVALUATION_TASK:
+    return checkResultEvaluationTask(bo);
+  case consts.VARIATIONAL_QUANTUM_ALGORITHM_TASK:
+    return checkVariationalQuantumAlgorithmTask(bo);
+  case consts.CIRCUIT_CUTTING_SUBPROCESS:
+    return checkCircuitCuttingSubprocess(bo);
   default:
     console.log('Unsupported QuantME element of type: ', element.$type);
     return false;
   }
+}
+
+function checkParameterOptimizationTask(bo) {
+  return true;
+}
+
+function checkWarmStartingTask(bo) {
+  return true;
+}
+
+function checkResultEvaluationTask(bo) {
+  return true;
+}
+
+function checkVariationalQuantumAlgorithmTask(bo) {
+  return true;
+}
+
+function checkCircuitCuttingSubprocess(bo) {
+  return true;
 }
 
 function checkHardwareSelectionSubprocess(bo) {

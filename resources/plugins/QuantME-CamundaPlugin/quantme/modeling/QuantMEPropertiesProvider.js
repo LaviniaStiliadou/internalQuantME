@@ -14,6 +14,7 @@ import CamundaPropertiesProvider from 'bpmn-js-properties-panel/lib/provider/cam
 import * as consts from 'client/src/app/quantme/Constants';
 import { serviceTaskDelegateProps } from './service-tasks/ServiceTaskDelegateProps';
 
+
 let QuantMEPropertyEntryHandler = require('./QuantMEPropertyEntryHandler');
 
 /**
@@ -161,6 +162,21 @@ function addQuantMEEntries(group, element, translate) {
   case consts.READOUT_ERROR_MITIGATION_TASK:
     addReadoutErrorMitigationTaskEntries(group, translate);
     break;
+  case consts.CIRCUIT_CUTTING_SUBPROCESS:
+    addCircuitCuttingSubprocessEntries(group, translate);
+    break;
+  case consts.RESULT_EVALUATION_TASK:
+    addResultEvaluationTaskEntries(group, translate);
+    break;
+  case consts.PARAMETER_OPTIMIZATION_TASK:
+    addParameterOptimizationTaskEntries(group, translate);
+    break;
+  case consts.VARIATIONAL_QUANTUM_ALGORITHM_TASK:
+    addVariationalQuantumAlgorithmTaskEntries(group, translate);
+    break;
+  case consts.WARM_STARTING_TASK:
+    addWarmStartingTaskEntries(group, translate);
+    break;
   case consts.QUANTUM_HARDWARE_SELECTION_SUBPROCESS:
     addHardwareSelectionSubprocessEntries(group, translate);
     break;
@@ -223,7 +239,40 @@ function addReadoutErrorMitigationTaskEntries(group, translate) {
   QuantMEPropertyEntryHandler.addMaxAgeEntry(group, translate);
   QuantMEPropertyEntryHandler.addMaxCMSizeEntry(group, translate);
   QuantMEPropertyEntryHandler.addMaxREMCostsEntry(group, translate);
+}
 
+function addParameterOptimizationTaskEntries(group, translate) {
+  QuantMEPropertyEntryHandler.addOptimizerEntry(group, translate);
+  QuantMEPropertyEntryHandler.addMaxIterationsEntry(group, translate);
+  QuantMEPropertyEntryHandler.addToleranceThresholdEntry(group, translate);
+  QuantMEPropertyEntryHandler.addLearningRateEntry(group, translate);
+}
+
+function addResultEvaluationTaskEntries(group, translate) {
+  QuantMEPropertyEntryHandler.addObjectiveFunctionEntry(group, translate);
+  QuantMEPropertyEntryHandler.addCostFunctionEntry(group, translate);
+  QuantMEPropertyEntryHandler.addAlphaEntry(group, translate);
+  QuantMEPropertyEntryHandler.addEtaEntry(group, translate);
+}
+
+function addVariationalQuantumAlgorithmTaskEntries(group, translate) {
+  QuantMEPropertyEntryHandler.addAlgorithmicProblemEntry(group, translate);
+  QuantMEPropertyEntryHandler.addQuantumAlgorithmEntry(group, translate);
+  QuantMEPropertyEntryHandler.addQpuEntry(group, translate);
+  QuantMEPropertyEntryHandler.addProviderEntry(group, translate);
+  QuantMEPropertyEntryHandler.addOptimizerEntry(group, translate);
+  QuantMEPropertyEntryHandler.addObjectiveFunctionEntry(group, translate);
+  QuantMEPropertyEntryHandler.addCuttingMethodVQATaskEntry(group, translate);
+  QuantMEPropertyEntryHandler.addWarmStartingMethodVQATaskEntry(group, translate);
+  QuantMEPropertyEntryHandler.addMitigationMethodVQATaskEntry(group, translate);
+}
+
+function addWarmStartingTaskEntries(group, translate) {
+  QuantMEPropertyEntryHandler.addWarmStartingMethodEntry(group, translate);
+  QuantMEPropertyEntryHandler.addQuantumAlgorithmEntry(group, translate);
+  QuantMEPropertyEntryHandler.addClassicalAlgorithmdEntry(group, translate);
+  QuantMEPropertyEntryHandler.addRepetitionsEntry(group, translate);
+  QuantMEPropertyEntryHandler.addRoundedEntry(group, translate);
 }
 
 function addHardwareSelectionSubprocessEntries(group, translate) {
@@ -232,6 +281,13 @@ function addHardwareSelectionSubprocessEntries(group, translate) {
   QuantMEPropertyEntryHandler.addProvidersEntry(group, translate);
   QuantMEPropertyEntryHandler.addSimulatorsAllowedEntry(group, translate);
   QuantMEPropertyEntryHandler.addSelectionStrategyEntry(group, translate);
+}
+
+function addCircuitCuttingSubprocessEntries(group, translate) {
+  QuantMEPropertyEntryHandler.addCuttingMethodEntry(group, translate);
+  QuantMEPropertyEntryHandler.addMaxSubCircuitWidthEntry(group, translate);
+  QuantMEPropertyEntryHandler.addMaxNumberOfCutsEntry(group, translate);
+  QuantMEPropertyEntryHandler.addNumberOfSubcircuitsEntry(group, translate);
 }
 
 QuantMEPropertiesProvider.$inject = [

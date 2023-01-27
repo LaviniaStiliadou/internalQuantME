@@ -12,8 +12,13 @@
 import BpmnRenderer from 'bpmn-js/lib/draw/BpmnRenderer';
 import * as quantmeReplaceOptions from './QuantMEReplaceOptions';
 import * as consts from 'client/src/app/quantme/Constants';
-import { append as svgAppend, attr as svgAttr, create as svgCreate } from 'tiny-svg';
+import { append as svgAppend, attr as svgAttr, create as svgCreate, innerSVG, select as svgSelect } from 'tiny-svg';
 import { getFillColor, getStrokeColor } from 'bpmn-js/lib/draw/BpmnRenderUtil';
+import { getQuantMESVG } from './QuantMESVGMap';
+import {
+  queryAll as domQueryAll
+} from 'min-dom';
+
 
 /**
  * This class extends the default BPMNRenderer to render the newly introduced QuantME task types
@@ -27,8 +32,23 @@ export default class QuantMERenderer extends BpmnRenderer {
     var defaultFillColor = config && config.defaultFillColor,
         defaultStrokeColor = config && config.defaultStrokeColor;
 
-    function drawPath(parentGfx, d, attrs) {
+    function drawTaskSVG(parentGfx, iconID) {
+      var importsvg = getQuantMESVG(iconID);
+      var innerSVGstring = importsvg.svg;
+      var transformDef = importsvg.transform;
 
+      const groupDef = svgCreate('g');
+      svgAttr(groupDef, { transform: transformDef });
+      innerSVG(groupDef, innerSVGstring);
+
+      // set task box opacity to 0 such that icon can be in the background
+      svgAttr(svgSelect(parentGfx, 'rect'), { 'fill-opacity': 0 });
+
+      // draw svg in the background
+      parentGfx.prepend(groupDef);
+    }
+
+    function drawPath(parentGfx, d, attrs) {
       attrs = computeStyle(attrs, [ 'no-fill' ], {
         strokeWidth: 2,
         stroke: 'black'
@@ -37,7 +57,6 @@ export default class QuantMERenderer extends BpmnRenderer {
       const path = svgCreate('path');
       svgAttr(path, { d: d });
       svgAttr(path, attrs);
-
       svgAppend(parentGfx, path);
 
       return path;
@@ -48,7 +67,6 @@ export default class QuantMERenderer extends BpmnRenderer {
         var subprocess = self.renderer('bpmn:SubProcess')(parentGfx, element);
 
         var pathData = quantMEPathMap.getPath('SUBPROCESS_QUANTUM_HARDWARE_SELECTION');
-
         drawPath(parentGfx, pathData, {
           transform:'scale(0.5)',
           strokeWidth: 1.5,
@@ -65,6 +83,11 @@ export default class QuantMERenderer extends BpmnRenderer {
           stroke: getStrokeColor(element, defaultStrokeColor)
         });
 
+        return subprocess;
+      },
+      [consts.CIRCUIT_CUTTING_SUBPROCESS]: function(self, parentGfx, element) {
+        var subprocess = self.renderer('bpmn:SubProcess')(parentGfx, element);
+        drawTaskSVG(parentGfx, 'SUBPROCESS_TYPE_CIRCUIT_CUTTING');
         return subprocess;
       },
       [consts.QUANTUM_COMPUTATION_TASK]: function(self, parentGfx, element) {
@@ -215,19 +238,53 @@ export default class QuantMERenderer extends BpmnRenderer {
       },
       [consts.READOUT_ERROR_MITIGATION_TASK]: function(self, parentGfx, element) {
         var task = self.renderer('bpmn:Task')(parentGfx, element);
-
-        var pathData = quantMEPathMap.getPath('TASK_TYPE_ERROR_MITIGATION');
-
-        drawPath(parentGfx, pathData, {
-          transform:'scale(0.3)',
-          strokeWidth: 0.5,
-          fill: getFillColor(element, '#000000'),
-          stroke: getStrokeColor(element, defaultStrokeColor)
-        });
-
+        drawTaskSVG(parentGfx, 'TASK_TYPE_ERROR_MITIGATION');
+        return task;
+      },
+      [consts.WARM_STARTING_TASK]: function(self, parentGfx, element) {
+        var task = self.renderer('bpmn:Task')(parentGfx, element);
+        drawTaskSVG(parentGfx, 'TASK_TYPE_WARM_STARTING');
+        return task;
+      },
+      [consts.PARAMETER_OPTIMIZATION_TASK]: function(self, parentGfx, element) {
+        var task = self.renderer('bpmn:Task')(parentGfx, element);
+        drawTaskSVG(parentGfx, 'TASK_TYPE_PARAMETER_OPTIMIZATION');
+        return task;
+      },
+      [consts.RESULT_EVALUATION_TASK]: function(self, parentGfx, element) {
+        var task = self.renderer('bpmn:Task')(parentGfx, element);
+        setTimeout(function() {}, 10000);
+        drawTaskSVG(parentGfx, 'TASK_TYPE_RESULT_EVALUATION');
+        return task;
+      },
+      [consts.VARIATIONAL_QUANTUM_ALGORITHM_TASK]: function(self, parentGfx, element) {
+        var task = self.renderer('bpmn:Task')(parentGfx, element);
+        drawTaskSVG(parentGfx, 'TASK_TYPE_VQA');
         return task;
       }
     };
+
+    setTimeout(function() {
+
+      // TODO: pullrequest to change BpmnRenderer.js if issue persists in new Version
+      // extract markers out of task icon svgs when loading a saved diagram
+      // due to restrictions in BpmnRenderer.js that places them in first defs element in svg
+
+      var existingDefs = domQueryAll('marker', canvas._svg);
+      if (existingDefs != null) {
+        var createdNewDefs = false;
+        for (let i = 0; i < existingDefs.length; i++) {
+          if (existingDefs[i].parentElement.parentElement.nodeName !== 'svg') {
+            if (createdNewDefs === false) {
+              var newDefs = svgCreate('defs');
+              svgAppend(canvas._svg, newDefs);
+              createdNewDefs = true;
+            }
+            svgAppend(newDefs, existingDefs[i]);
+          }
+        }
+      }
+    }, 1000);
   }
 
   renderer(type) {

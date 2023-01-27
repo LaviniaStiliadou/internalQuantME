@@ -599,9 +599,14 @@ export function addNeighborhoodRangeEntry(group, translate) {
 }
 
 export function addObjectiveFunctionEntry(group, translate) {
-  group.entries.push(EntryFactory.textField({
+  group.entries.push(EntryFactory.selectBox({
     id: consts.OBJECTIVE_FUNCTION,
     label: translate('Objective Function'),
+    selectOptions: [
+      { value:'expectationValue',name:'Expectation Value' } ,
+      { value:'gibbs',name:'Gibbs' },
+      { value:'cvar',name:'CVar' }
+    ],
     modelProperty: consts.OBJECTIVE_FUNCTION,
 
     get: function(element, node) {
@@ -622,17 +627,28 @@ export function addObjectiveFunctionEntry(group, translate) {
     },
 
     hidden: function(element, node) {
+      console.log(element);
       let bo = ModelUtil.getBusinessObject(element);
-      let mitigationMethod = bo && bo.mitigationMethod;
-      return !(mitigationMethod === 'geneticBasedREM');
+      if (bo.$type === 'quantme:ReadoutErrorMitigationTask') {
+        let mitigationMethod = bo && bo.mitigationMethod;
+        return !(mitigationMethod === 'geneticBasedREM');
+      }
+      else {
+        return false;
+      }
     }
   }));
 }
 
 export function addOptimizerEntry(group, translate) {
-  group.entries.push(EntryFactory.textField({
-    id: consts.OPTIMIZER,
+  group.entries.push(EntryFactory.selectBox({
+    id: consts.OBJECTIVE_FUNCTION,
     label: translate('Optimizer'),
+    selectOptions: [
+      { value:'cobyla',name:'Cobyla' } ,
+      { value:'spsa',name:'SPSA' },
+      { value:'nelderMead',name:'Nelder Mead' }
+    ],
     modelProperty: consts.OPTIMIZER,
 
     get: function(element, node) {
@@ -654,8 +670,12 @@ export function addOptimizerEntry(group, translate) {
 
     hidden: function(element, node) {
       let bo = ModelUtil.getBusinessObject(element);
-      let mitigationMethod = bo && bo.mitigationMethod;
-      return !(mitigationMethod === 'geneticBasedREM');
+      if (bo.$type === 'quantme:ReadoutErrorMitigationTask') {
+        let mitigationMethod = bo && bo.mitigationMethod;
+        return !(mitigationMethod === 'geneticBasedREM');
+      } else {
+        return false;
+      }
     }
   }));
 }
@@ -716,6 +736,605 @@ export function addMaxCMSizeEntry(group, translate) {
       let bo = ModelUtil.getBusinessObject(element);
       let mitigationMethod = bo && bo.mitigationMethod;
       return !(mitigationMethod === 'matrixInversion' || mitigationMethod === 'pertubativeREM' || mitigationMethod === 'geneticBasedREM' || mitigationMethod === 'mthree');
+    }
+  }));
+}
+
+export function addWarmStartingMethodEntry(group, translate) {
+  group.entries.push(EntryFactory.selectBox({
+    id: consts.WARM_STARTING_METHOD,
+    label: translate('Warm-Starting method'),
+    selectOptions: [
+      { value:'initialStateWarmStartEgger',name:'Initial State Warm-Start Egger' } ,
+      { value:'initialParameterPrecomputation',name:'Initial Parameter Precomputation' },
+    ],
+    modelProperty: consts.WARM_STARTING_METHOD,
+
+    get: function(element, node) {
+      let bo = ModelUtil.getBusinessObject(element);
+      let warmStartingMethod = bo && bo.warmStartingMethod;
+      return { warmStartingMethod: warmStartingMethod };
+    },
+
+    set: function(element, values, node) {
+      let bo = ModelUtil.getBusinessObject(element);
+      return CmdHelper.updateBusinessObject(element, bo, {
+        warmStartingMethod: values.warmStartingMethod || undefined
+      });
+    },
+
+    validate: function(element, values, node) {
+      return true;
+    },
+
+    hidden: function(element, node) {
+      return false;
+    }
+  }));
+}
+
+export function addQuantumAlgorithmEntry(group, translate) {
+  group.entries.push(EntryFactory.textField({
+    id: consts.QUANTUM_ALGORITHM,
+    label: translate('Quantum algorithm (e.g. QAOA)'),
+    modelProperty: consts.QUANTUM_ALGORITHM,
+
+    get: function(element, node) {
+      let bo = ModelUtil.getBusinessObject(element);
+      let quantumAlgorithm = bo && bo.quantumAlgorithm;
+      return { quantumAlgorithm: quantumAlgorithm };
+    },
+
+    set: function(element, values, node) {
+      let bo = ModelUtil.getBusinessObject(element);
+      return CmdHelper.updateBusinessObject(element, bo, {
+        quantumAlgorithm: values.quantumAlgorithm || undefined
+      });
+    },
+
+    validate: function(element, values, node) {
+      return true;
+    },
+
+    hidden: function(element, node) {
+      return false;
+    }
+  }));
+}
+
+export function addClassicalAlgorithmdEntry(group, translate) {
+  group.entries.push(EntryFactory.textField({
+    id: consts.CLASSICAL_ALGORTHM,
+    label: translate('Classical algorithm used to warm-start'),
+    modelProperty: consts.CLASSICAL_ALGORTHM,
+
+    get: function(element, node) {
+      let bo = ModelUtil.getBusinessObject(element);
+      let classicalAlgorithm = bo && bo.classicalAlgorithm;
+      return { classicalAlgorithm: classicalAlgorithm };
+    },
+
+    set: function(element, values, node) {
+      let bo = ModelUtil.getBusinessObject(element);
+      return CmdHelper.updateBusinessObject(element, bo, {
+        classicalAlgorithm: values.classicalAlgorithm || undefined
+      });
+    },
+
+    validate: function(element, values, node) {
+      return true;
+    },
+
+    hidden: function(element, node) {
+      let bo = ModelUtil.getBusinessObject(element);
+      let warmStartingMethod = bo && bo.warmStartingMethod;
+      return !(warmStartingMethod === 'initialStateWarmStartEgger');
+    }
+  }));
+}
+
+export function addRepetitionsEntry(group, translate) {
+  group.entries.push(EntryFactory.textField({
+    id: consts.REPETITIONS,
+    label: translate('Repetitions of the classical algorithm for finding good approximation'),
+    modelProperty: consts.REPETITIONS,
+
+    get: function(element, node) {
+      let bo = ModelUtil.getBusinessObject(element);
+      let repetitions = bo && bo.repetitions;
+      return { repetitions: repetitions };
+    },
+
+    set: function(element, values, node) {
+      let bo = ModelUtil.getBusinessObject(element);
+      return CmdHelper.updateBusinessObject(element, bo, {
+        repetitions: values.repetitions || undefined
+      });
+    },
+
+    validate: function(element, values, node) {
+      return true;
+    },
+
+    hidden: function(element, node) {
+      let bo = ModelUtil.getBusinessObject(element);
+      let warmStartingMethod = bo && bo.warmStartingMethod;
+      return !(warmStartingMethod === 'initialStateWarmStartEgger');
+    }
+  }));
+}
+
+export function addRoundedEntry(group, translate) {
+  group.entries.push(EntryFactory.textField({
+    id: consts.ROUNDED,
+    label: translate('Round classical result '),
+    modelProperty: consts.ROUNDED,
+
+    get: function(element, node) {
+      let bo = ModelUtil.getBusinessObject(element);
+      let rounded = bo && bo.rounded;
+      return { rounded: rounded };
+    },
+
+    set: function(element, values, node) {
+      let bo = ModelUtil.getBusinessObject(element);
+      return CmdHelper.updateBusinessObject(element, bo, {
+        rounded: values.rounded || undefined
+      });
+    },
+
+    validate: function(element, values, node) {
+      return true;
+    },
+
+    hidden: function(element, node) {
+      let bo = ModelUtil.getBusinessObject(element);
+      let warmStartingMethod = bo && bo.warmStartingMethod;
+      console.log(warmStartingMethod);
+      return !(warmStartingMethod === 'initialStateWarmStartEgger');
+    }
+  }));
+}
+export function addCostFunctionEntry(group, translate) {
+  group.entries.push(EntryFactory.textField({
+    id: consts.COST_FUNCTION,
+    label: translate('Cost function to use'),
+    modelProperty: consts.COST_FUNCTION,
+
+    get: function(element, node) {
+      let bo = ModelUtil.getBusinessObject(element);
+      let costFunction = bo && bo.costFunction;
+      return { costFunction: costFunction };
+    },
+
+    set: function(element, values, node) {
+      let bo = ModelUtil.getBusinessObject(element);
+      return CmdHelper.updateBusinessObject(element, bo, {
+        costFunction: values.costFunction || undefined
+      });
+    },
+
+    validate: function(element, values, node) {
+      return true;
+    },
+
+    hidden: function(element, node) {
+      return false;
+    }
+  }));
+}
+
+export function addEtaEntry(group, translate) {
+  group.entries.push(EntryFactory.textField({
+    id: consts.ETA,
+    label: translate('Eta'),
+    modelProperty: consts.ETA,
+
+    get: function(element, node) {
+      let bo = ModelUtil.getBusinessObject(element);
+      let eta = bo && bo.eta;
+      return { eta: eta };
+    },
+
+    set: function(element, values, node) {
+      let bo = ModelUtil.getBusinessObject(element);
+      return CmdHelper.updateBusinessObject(element, bo, {
+        eta: values.eta || undefined
+      });
+    },
+
+    validate: function(element, values, node) {
+      return true;
+    },
+
+    hidden: function(element, node) {
+      let bo = ModelUtil.getBusinessObject(element);
+      let objectiveFunction = bo && bo.objectiveFunction;
+      return !(objectiveFunction === 'gibbs');
+    }
+  }));
+}
+
+export function addAlphaEntry(group, translate) {
+  group.entries.push(EntryFactory.textField({
+    id: consts.ALPHA,
+    label: translate('Alpha'),
+    modelProperty: consts.ALPHA,
+
+    get: function(element, node) {
+      let bo = ModelUtil.getBusinessObject(element);
+      let alpha = bo && bo.alpha;
+      return { alpha: alpha };
+    },
+
+    set: function(element, values, node) {
+      let bo = ModelUtil.getBusinessObject(element);
+      return CmdHelper.updateBusinessObject(element, bo, {
+        alpha: values.alpha || undefined
+      });
+    },
+
+    validate: function(element, values, node) {
+      return true;
+    },
+
+    hidden: function(element, node) {
+      let bo = ModelUtil.getBusinessObject(element);
+      let objectiveFunction = bo && bo.objectiveFunction;
+      return !(objectiveFunction === 'cvar');
+    }
+  }));
+}
+
+export function addAlgorithmicProblemEntry(group, translate) {
+  group.entries.push(EntryFactory.textField({
+    id: consts.ALGORITHMIC_PROBLEM,
+    label: translate('Algorithmic Problem (e.g. MaxCut)'),
+    modelProperty: consts.ALGORITHMIC_PROBLEM,
+
+    get: function(element, node) {
+      let bo = ModelUtil.getBusinessObject(element);
+      let algorithmicProblem = bo && bo.algorithmicProblem;
+      return { algorithmicProblem: algorithmicProblem };
+    },
+
+    set: function(element, values, node) {
+      let bo = ModelUtil.getBusinessObject(element);
+      return CmdHelper.updateBusinessObject(element, bo, {
+        algorithmicProblem: values.algorithmicProblem || undefined
+      });
+    },
+
+    validate: function(element, values, node) {
+      return true;
+    },
+
+    hidden: function(element, node) {
+      return false;
+    }
+  }));
+}
+
+export function addMaxIterationsEntry(group, translate) {
+  group.entries.push(EntryFactory.textField({
+    id: consts.MAX_ITERATIONS,
+    label: translate('Max Iterations'),
+    modelProperty: consts.MAX_ITERATIONS,
+
+    get: function(element, node) {
+      let bo = ModelUtil.getBusinessObject(element);
+      let maxIterations = bo && bo.maxIterations;
+      return { maxIterations: maxIterations };
+    },
+
+    set: function(element, values, node) {
+      let bo = ModelUtil.getBusinessObject(element);
+      return CmdHelper.updateBusinessObject(element, bo, {
+        maxIterations: values.maxIterations || undefined
+      });
+    },
+
+    validate: function(element, values, node) {
+      return true;
+    },
+
+    hidden: function(element, node) {
+      let bo = ModelUtil.getBusinessObject(element);
+      let optimizer = bo && bo.optimizer;
+      return !(optimizer === 'cobyla');
+    }
+  }));
+}
+
+export function addToleranceThresholdEntry(group, translate) {
+  group.entries.push(EntryFactory.textField({
+    id: consts.TOLERANCE_THRESHOLD,
+    label: translate('Tolereance Threshold'),
+    modelProperty: consts.TOLERANCE_THRESHOLD,
+
+    get: function(element, node) {
+      let bo = ModelUtil.getBusinessObject(element);
+      let toleranceThreshold = bo && bo.toleranceThreshold;
+      return { toleranceThreshold: toleranceThreshold };
+    },
+
+    set: function(element, values, node) {
+      let bo = ModelUtil.getBusinessObject(element);
+      return CmdHelper.updateBusinessObject(element, bo, {
+        toleranceThreshold: values.toleranceThreshold || undefined
+      });
+    },
+
+    validate: function(element, values, node) {
+      return true;
+    },
+
+    hidden: function(element, node) {
+      let bo = ModelUtil.getBusinessObject(element);
+      let optimizer = bo && bo.optimizer;
+      return !(optimizer === 'cobyla');
+    }
+  }));
+}
+
+export function addLearningRateEntry(group, translate) {
+  group.entries.push(EntryFactory.textField({
+    id: consts.LEARNING_RATE,
+    label: translate('Learning Rate'),
+    modelProperty: consts.LEARNING_RATE,
+
+    get: function(element, node) {
+      let bo = ModelUtil.getBusinessObject(element);
+      let learningRate = bo && bo.learningRate;
+      return { learningRate: learningRate };
+    },
+
+    set: function(element, values, node) {
+      let bo = ModelUtil.getBusinessObject(element);
+      return CmdHelper.updateBusinessObject(element, bo, {
+        learningRate: values.learningRate || undefined
+      });
+    },
+
+    validate: function(element, values, node) {
+      return true;
+    },
+
+    hidden: function(element, node) {
+      let bo = ModelUtil.getBusinessObject(element);
+      let optimizer = bo && bo.optimizer;
+      return !(optimizer === 'cobyla');
+    }
+  }));
+}
+
+
+
+export function addCuttingMethodEntry(group, translate) {
+  group.entries.push(EntryFactory.selectBox({
+    id: consts.CUTTING_METHOD,
+    label: translate('Cutting Method'),
+    selectOptions: [
+      { value:'qiskit',name:'Qiskit' }
+    ],
+    modelProperty: consts.CUTTING_METHOD,
+
+    get: function(element, node) {
+      let bo = ModelUtil.getBusinessObject(element);
+      let cuttingMethod = bo && bo.cuttingMethod;
+      return { cuttingMethod: cuttingMethod };
+    },
+
+    set: function(element, values, node) {
+      let bo = ModelUtil.getBusinessObject(element);
+      return CmdHelper.updateBusinessObject(element, bo, {
+        cuttingMethod: values.cuttingMethod || undefined
+      });
+    },
+
+    validate: function(element, values, node) {
+      return true;
+    },
+
+    hidden: function(element, node) {
+      return false;
+    }
+  }));
+}
+
+export function addMaxSubCircuitWidthEntry(group, translate) {
+  group.entries.push(EntryFactory.textField({
+    id: consts.MAX_SUBCIRCUIT_WIDTH,
+    label: translate('Maximum Sub-Circuit width'),
+    modelProperty: consts.MAX_SUBCIRCUIT_WIDTH,
+
+    get: function(element, node) {
+      let bo = ModelUtil.getBusinessObject(element);
+      let maxSubCircuitWidth = bo && bo.maxSubCircuitWidth;
+      return { maxSubCircuitWidth: maxSubCircuitWidth };
+    },
+
+    set: function(element, values, node) {
+      let bo = ModelUtil.getBusinessObject(element);
+      return CmdHelper.updateBusinessObject(element, bo, {
+        maxSubCircuitWidth: values.maxSubCircuitWidth || undefined
+      });
+    },
+
+    validate: function(element, values, node) {
+      return true;
+    },
+
+    hidden: function(element, node) {
+      let bo = ModelUtil.getBusinessObject(element);
+      let cuttingMethod = bo && bo.cuttingMethod;
+      return !(cuttingMethod === 'qiskit');
+    }
+  }));
+}
+
+
+export function addMaxNumberOfCutsEntry(group, translate) {
+  group.entries.push(EntryFactory.textField({
+    id: consts.MAX_NUMBER_OF_CUTS,
+    label: translate('Maximum number of cuts'),
+    modelProperty: consts.MAX_NUMBER_OF_CUTS,
+
+    get: function(element, node) {
+      let bo = ModelUtil.getBusinessObject(element);
+      let maxNumberOfCuts = bo && bo.maxNumberOfCuts;
+      return { maxNumberOfCuts: maxNumberOfCuts };
+    },
+
+    set: function(element, values, node) {
+      let bo = ModelUtil.getBusinessObject(element);
+      return CmdHelper.updateBusinessObject(element, bo, {
+        maxNumberOfCuts: values.maxNumberOfCuts || undefined
+      });
+    },
+
+    validate: function(element, values, node) {
+      return true;
+    },
+
+    hidden: function(element, node) {
+      let bo = ModelUtil.getBusinessObject(element);
+      let cuttingMethod = bo && bo.cuttingMethod;
+      return !(cuttingMethod === 'qiskit');
+    }
+  }));
+}
+
+
+export function addNumberOfSubcircuitsEntry(group, translate) {
+  group.entries.push(EntryFactory.textField({
+    id: consts.MAXIMUM_NUM_SUBCIRCUITS,
+    label: translate('Maximum Number of Sub-Circuits'),
+    modelProperty: consts.MAXIMUM_NUM_SUBCIRCUITS,
+
+    get: function(element, node) {
+      let bo = ModelUtil.getBusinessObject(element);
+      let maxNumSubCircuits = bo && bo.maxNumSubCircuits;
+      return { maxNumSubCircuits: maxNumSubCircuits };
+    },
+
+    set: function(element, values, node) {
+      let bo = ModelUtil.getBusinessObject(element);
+      return CmdHelper.updateBusinessObject(element, bo, {
+        maxNumSubCircuits: values.maxNumSubCircuits || undefined
+      });
+    },
+
+    validate: function(element, values, node) {
+      return true;
+    },
+
+    hidden: function(element, node) {
+      let bo = ModelUtil.getBusinessObject(element);
+      let cuttingMethod = bo && bo.cuttingMethod;
+      return !(cuttingMethod === 'qiskit');
+    }
+  }));
+}
+
+export function addCuttingMethodVQATaskEntry(group, translate) {
+  group.entries.push(EntryFactory.selectBox({
+    id: consts.CUTTING_METHOD,
+    label: translate('Cutting Method'),
+    selectOptions: [
+      { value:'',name:'None' }, { value:'qiskit',name:'Qiskit' }
+    ],
+    modelProperty: consts.CUTTING_METHOD,
+
+    get: function(element, node) {
+      let bo = ModelUtil.getBusinessObject(element);
+      let cuttingMethod = bo && bo.cuttingMethod;
+      return { cuttingMethod: cuttingMethod };
+    },
+
+    set: function(element, values, node) {
+      let bo = ModelUtil.getBusinessObject(element);
+      return CmdHelper.updateBusinessObject(element, bo, {
+        cuttingMethod: values.cuttingMethod || undefined
+      });
+    },
+
+    validate: function(element, values, node) {
+      return true;
+    },
+
+    hidden: function(element, node) {
+      return false;
+    }
+  }));
+}
+
+export function addWarmStartingMethodVQATaskEntry(group, translate) {
+  group.entries.push(EntryFactory.selectBox({
+    id: consts.WARM_STARTING_METHOD,
+    label: translate('Warm-Starting method'),
+    selectOptions: [
+      { value: '', name: 'None' },
+      { value:'initialStateWarmStartEgger',name:'Initial State Warm-Start Egger' } ,
+      { value:'initialParameterPrecomputation',name:'Initial Parameter Precomputation' },
+    ],
+    modelProperty: consts.WARM_STARTING_METHOD,
+
+    get: function(element, node) {
+      let bo = ModelUtil.getBusinessObject(element);
+      let warmStartingMethod = bo && bo.warmStartingMethod;
+      return { warmStartingMethod: warmStartingMethod };
+    },
+
+    set: function(element, values, node) {
+      let bo = ModelUtil.getBusinessObject(element);
+      return CmdHelper.updateBusinessObject(element, bo, {
+        warmStartingMethod: values.warmStartingMethod || undefined
+      });
+    },
+
+    validate: function(element, values, node) {
+      return true;
+    },
+
+    hidden: function(element, node) {
+      return false;
+    }
+  }));
+}
+
+export function addMitigationMethodVQATaskEntry(group, translate) {
+  group.entries.push(EntryFactory.selectBox({
+    id: consts.MITIGATION_METHOD,
+    label: translate('Mitigation Method'),
+    selectOptions: [
+      { value:'',name:'None' } ,
+      { value:'matrixInversion',name:'Matrix Inversion' } , { value:'pertubativeREM',name:'Pertubative REM' }, { value:'mthree',name:'Mthree' }, { value:'geneticBasedREM',name:'Genetic-Based REM' },
+      { value:'activeREM',name:'Active REM' } , { value:'modelFreeREM',name:'Model-Free REM' }, { value:'hybridREM',name:'Hybrid REM' }, { value:'crosstalkREM',name:'Crosstalk-Focused REM' },
+      { value:'sim',name:'SIM' } , { value:'aim',name:'AIM' }, { value:'bfa',name:'BFA' }, { value:'truncatedNeumannSeries',name:'Truncated Neumann Series' },
+      { value:'lsu',name:'LSU' } , { value:'dnnREM',name:'DNN-Based REM' }
+    ],
+    modelProperty: consts.MITIGATION_METHOD,
+
+    get: function(element, node) {
+      let bo = ModelUtil.getBusinessObject(element);
+      let mitigationMethod = bo && bo.mitigationMethod;
+      return { mitigationMethod: mitigationMethod };
+    },
+
+    set: function(element, values, node) {
+      let bo = ModelUtil.getBusinessObject(element);
+      return CmdHelper.updateBusinessObject(element, bo, {
+        mitigationMethod: values.mitigationMethod || undefined
+      });
+    },
+
+    validate: function(element, values, node) {
+      return true;
+    },
+
+    hidden: function(element, node) {
+      return false;
     }
   }));
 }
