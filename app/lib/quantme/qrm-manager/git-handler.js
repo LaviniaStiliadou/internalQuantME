@@ -18,9 +18,15 @@ const fetch = require('node-fetch');
  * @param repoName the name of the repository
  * @param repoPath the path to the root folder in the repository to use
  */
-module.exports.getFoldersInRepository = async function(userName, repoName, repoPath) {
+module.exports.getFoldersInRepository = async function(userName, repoName, repoPath, token) {
   const directoryURLs = [];
-  let response = await fetch(`https://api.github.com/repos/${userName}/${repoName}/contents/${repoPath}?ref=HEAD`);
+  const headers = {};
+  if (token) {
+    headers['Authorization'] = `Token ${token}`;
+  }
+  let response = await fetch(`https://api.github.com/repos/${userName}/${repoName}/contents/${repoPath}?ref=HEAD`, {
+    headers: headers
+  });
   const contents = await response.json();
 
   if (response.status !== 200) {
@@ -52,9 +58,15 @@ module.exports.getFileContent = async function(fileURL) {
  *
  * @param folderURL the URL to the folder in the github repository
  */
-module.exports.getFilesInFolder = async function(folderURL) {
+module.exports.getFilesInFolder = async function(folderURL, token) {
   const fileURLs = [];
-  let response = await fetch(folderURL);
+  const headers = {};
+  if (token) {
+    headers['Authorization'] = `Token ${token}`;
+  }
+  let response = await fetch(folderURL,{
+    headers: headers
+  });
   const contents = await response.json();
 
   for (let i = 0; i < contents.length; i++) {

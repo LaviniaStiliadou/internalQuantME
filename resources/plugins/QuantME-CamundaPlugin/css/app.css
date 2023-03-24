@@ -156,6 +156,16 @@ html, body, #container {
   margin: 0 6px 0 0;
 }
 
+.bpmn-icon-hybrid-runtime-group:before {
+  content: "";
+  display: block;
+  background: url("../../../../client/resources/quantme/menu-icon-hybrid-runtime-group.png") no-repeat;
+  width: 20px;
+  height: 20px;
+  float: left;
+  margin: 0 6px 0 0;
+}
+
 .bpmn-icon-task-quantum-computation:before {
   content: "";
   display: block;

@@ -19,6 +19,7 @@
     "build:test-distro": "node tasks/test-distro.js",
     "build": "run-s plugin client:build \"build:distro -- {@}\" \"build:test-distro -- {@}\" --",
     "lint": "eslint .",
+    "lint:fix": "eslint --fix --ext .js .",
     "postinstall": "lerna bootstrap",
     "test": "run-s *:test",
     "start": "run-s \"dev -- {@}\" --"

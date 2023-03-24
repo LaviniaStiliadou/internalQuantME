@@ -42,6 +42,8 @@ export function requiredAttributesAvailable(element) {
     return checkReadoutErrorMitigationTask(bo);
   case consts.QUANTUM_HARDWARE_SELECTION_SUBPROCESS:
     return checkHardwareSelectionSubprocess(bo);
+  case consts.HYBRID_RUNTIME_GROUP:
+    return checkHybridRuntimeGroup(bo);
   case consts.PARAMETER_OPTIMIZATION_TASK:
     return checkParameterOptimizationTask(bo);
   case consts.WARM_STARTING_TASK:
@@ -58,6 +60,9 @@ export function requiredAttributesAvailable(element) {
   }
 }
 
+function checkHybridRuntimeGroup(bo) {
+  return !(typeof bo.runtimeProvider === 'undefined');
+}
 function checkParameterOptimizationTask(bo) {
   return true;
 }

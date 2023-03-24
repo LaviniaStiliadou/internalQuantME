@@ -66,7 +66,9 @@ export default class QuantMEController extends PureComponent {
             {
               nisqAnalyzerEndpoint: self.modeler.config.nisqAnalyzerEndpoint,
               transformationFrameworkEndpoint: self.modeler.config.transformationFrameworkEndpoint,
-              camundaEndpoint: self.modeler.config.camundaEndpoint
+              camundaEndpoint: self.modeler.config.camundaEndpoint,
+              wineryEndpoint: self.modeler.config.wineryEndpoint,
+              qiskitRuntimeHandlerEndpoint: self.modeler.config.qiskitRuntimeHandlerEndpoint
             });
 
           // return result to API
@@ -97,7 +99,9 @@ export default class QuantMEController extends PureComponent {
             {
               nisqAnalyzerEndpoint: self.modeler.config.nisqAnalyzerEndpoint,
               transformationFrameworkEndpoint: self.modeler.config.transformationFrameworkEndpoint,
-              camundaEndpoint: self.modeler.config.camundaEndpoint
+              camundaEndpoint: self.modeler.config.camundaEndpoint,
+              wineryEndpoint: self.modeler.config.wineryEndpoint,
+              qiskitRuntimeHandlerEndpoint: self.modeler.config.qiskitRuntimeHandlerEndpoint
             });
           if (result.status === 'failed') {
             console.log('Transformation process failed with cause: ', result.cause);
@@ -214,7 +218,9 @@ export default class QuantMEController extends PureComponent {
       {
         nisqAnalyzerEndpoint: this.modeler.config.nisqAnalyzerEndpoint,
         transformationFrameworkEndpoint: this.modeler.config.transformationFrameworkEndpoint,
-        camundaEndpoint: this.modeler.config.camundaEndpoint
+        camundaEndpoint: this.modeler.config.camundaEndpoint,
+        wineryEndpoint: this.modeler.config.wineryEndpoint,
+        qiskitRuntimeHandlerEndpoint: this.modeler.config.qiskitRuntimeHandlerEndpoint
       });
 
     if (result.status === 'transformed') {

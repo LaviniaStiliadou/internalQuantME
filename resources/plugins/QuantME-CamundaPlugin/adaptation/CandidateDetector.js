@@ -11,8 +11,8 @@
 
 import lodash from 'lodash';
 import { getRootProcess } from 'client/src/app/quantme/utilities/Utilities';
-import { createModelerFromXml } from '../quantme/Utilities';
-import generateImage from 'client/src/app/util/generateImage';
+import { is } from 'bpmn-js/lib/util/ModelUtil';
+
 
 /**
  * Find candidates within the current workflow model that can be executed efficiently using a hybrid runtime
@@ -26,9 +26,6 @@ export async function findOptimizationCandidates(modeler) {
   const definitions = modeler.getDefinitions();
   const rootElement = getRootProcess(definitions);
   console.log('Searching optimization candidates for workflow with root element: ', rootElement);
-
-  // export xml of the current workflow model to enable a later image creation
-  let workflowXml = await modeler.get('bpmnjs').saveXML();
 
   // get all potential entry points for a hybrid loop
   let entryPoints = findEntryPoints(rootElement);
@@ -51,10 +48,6 @@ export async function findOptimizationCandidates(modeler) {
     if (optimizationCandidate !== undefined
       && containsQuantumCircuitExecutionTask(optimizationCandidate)
       && containsClassicalTask(optimizationCandidate)) {
-
-      // generate visual representation of the candidate using base64
-      optimizationCandidate = await visualizeCandidate(optimizationCandidate, workflowXml.xml);
-
       console.log('Found valid optimization candidate: ', optimizationCandidate);
       optimizationCandidates.push(optimizationCandidate);
     } else {
@@ -62,83 +55,93 @@ export async function findOptimizationCandidates(modeler) {
     }
   }
 
+  let groups = [];
+  if (rootElement.artifacts !== undefined) {
+    for (let j = 0; j < rootElement.artifacts.length; j++) {
+      groups.push(rootElement.artifacts[j]);
+    }
+  }
+
+  // delete already existing hybrid runtime groups
+  for (let group of groups) {
+    deleteVariationalSpheres(group, modeler);
+    console.log('Group with id ' + group.id + ' is deleted');
+  }
+
+  // draw hybrid runtime groups
+  for (let candidate of optimizationCandidates) {
+    candidate = await visualizeCandidateGroup(candidate, modeler);
+    generateCandidateGroup(candidate.groupBox, modeler);
+  }
+
   // return all valid optimization candidates for the analysis and rewrite modal
   return optimizationCandidates;
 }
 
 /**
- * Generate an image representing the candidate encoded using base64
+ * Delete the variational sphere from the workflow model
  *
- * @param optimizationCandidate the candidate to visualize
- * @param workflowXml the XML of the workflow the candidate belongs to
- * @return the string containing the base64 encoded image
+ * @param group
+ * @param modeler
  */
-async function visualizeCandidate(optimizationCandidate, workflowXml) {
-  console.log('Visualizing optimization candidate: ', optimizationCandidate);
-
-  // create new modeler for the visualization
-  let modeler = await createModelerFromXml(workflowXml);
+function deleteVariationalSpheres(group, modeler) {
+  const elementRegistry = modeler.get('elementRegistry');
   let modeling = modeler.get('modeling');
-  let elementRegistry = modeler.get('elementRegistry');
-  let rootElement = getRootProcess(modeler.getDefinitions());
-
-  // remove all flows that are not part of the candidate
-  const flowElements = lodash.cloneDeep(rootElement.flowElements);
-  console.log('Workflow contains %d elements!', flowElements.length);
-  for (let i = 0; i < flowElements.length; i++) {
-    let flowElement = flowElements[i];
-    if (!optimizationCandidate.containedElements.some(e => e.id === flowElement.id)
-      && flowElement.$type === 'bpmn:SequenceFlow') {
-
-      // remove connection from the modeler
-      let element = elementRegistry.get(flowElement.id);
-      modeling.removeConnection(element);
-    }
-  }
-  console.log('%d elements after filtering sequence flow!', rootElement.flowElements.length);
-
-  // remove all shapes that are not part of the candidate
-  for (let i = 0; i < flowElements.length; i++) {
-    let flowElement = flowElements[i];
-    if (!optimizationCandidate.containedElements.some(e => e.id === flowElement.id)
-      && flowElement.$type !== 'bpmn:SequenceFlow') {
-
-      // remove shape from the modeler
-      let element = elementRegistry.get(flowElement.id);
+  if (is(group, 'quantme:HybridRuntimeGroup')) {
+    const element = elementRegistry.get(group.id);
+    if (element != undefined) {
+      modeling.removeElements(element);
       modeling.removeShape(element);
     }
   }
-  console.log('Remaining workflow contains %d elements and candidate %d!', rootElement.flowElements.length, optimizationCandidate.containedElements.length);
+}
 
-  // export the candidate as svg
-  function saveSvgWrapper() {
-    return new Promise((resolve) => {
-      modeler.saveSVG((err, successResponse) => {
-        resolve(successResponse);
-      });
-    });
-  }
+/**
+ * Generate Group Element for hybrid runtime area
+ *
+ * @param groupBox
+ * @param modeler
+ */
+async function generateCandidateGroup(groupBox, modeler) {
+  let definitions = modeler.getDefinitions();
+  let rootElement = getRootProcess(definitions);
+  const elementRegistry = modeler.get('elementRegistry');
+  let rootElementBo = elementRegistry.get(rootElement.id);
+  let modeling = modeler.get('modeling');
+  return modeling.createShape({ type: 'quantme:HybridRuntimeGroup' }, { x: groupBox.x, y: groupBox.y, width: groupBox.width, height: groupBox.height }, rootElementBo, {});
+}
 
-  let svg = await saveSvgWrapper();
+/**
+ * Add Groupbox for HybridRuntime Candidate
+ *
+ * @param optimizationCandidate the candidate to visualize
+ * @param modeler of the WF
+ * @return the string containing the base64 encoded image
+ */
+async function visualizeCandidateGroup(optimizationCandidate, modeler) {
+  let elementRegistry = modeler.get('elementRegistry');
 
-  // calculate view box for the SVG
-  svg = calculateViewBox(optimizationCandidate, svg, elementRegistry);
+  const viewBox = calculateViewBox(optimizationCandidate, elementRegistry);
+  let groupBox = {};
+  groupBox.x = viewBox.minX - 25;
+  groupBox.y = viewBox.minY - 30;
+  groupBox.width = viewBox.maxX - viewBox.minX + 45;
+  groupBox.height = viewBox.maxY - viewBox.minY + 45;
 
   // generate png from svg
-  optimizationCandidate.candidateImage = generateImage('png', svg);
   optimizationCandidate.modeler = modeler;
+  optimizationCandidate.groupBox = groupBox;
   return optimizationCandidate;
 }
 
 /**
- * Calculate the view box for the svg to visualize only the current candidate
+ * Compute Viewbox of Optimization Candidate
  *
- * @param optimizationCandidate the optimization candidate to calculate the view box for
- * @param svg the svg to update the view box to visualize the optimization candidate
- * @param elementRegistry element registry of the modeler containing the complete workflow to access all contained elements
- * @return the updated svg with the calculated view box
+ * @param optimizationCandidate
+ * @param elementRegistry
+ * @returns {{}}
  */
-function calculateViewBox(optimizationCandidate, svg, elementRegistry) {
+function calculateViewBox(optimizationCandidate, elementRegistry) {
 
   // search for the modeling elements with the minimal and maximal x and y values
   let result = {};
@@ -181,32 +184,7 @@ function calculateViewBox(optimizationCandidate, svg, elementRegistry) {
       }
     }
   }
-
-  console.log('Minimum x value for candidate: ', result.minX);
-  console.log('Minimum y value for candidate: ', result.minY);
-  console.log('Maximum x value for candidate: ', result.maxX);
-  console.log('Maximum y value for candidate: ', result.maxY);
-
-  let width, height, x, y;
-  if (result.minX === undefined || result.minY === undefined || result.maxX === undefined || result.maxY === undefined) {
-    console.log('Error: unable to find modeling element with minimum and maximum x and y values!');
-
-    // default values in case an error occurred
-    width = 1000;
-    height = 1000;
-    x = 0;
-    y = 0;
-  } else {
-
-    // calculate view box and add a margin of 10 to the min/max values
-    x = result.minX - 10;
-    y = result.minY - 10;
-    width = result.maxX - result.minX + 20;
-    height = result.maxY - result.minY + 20;
-  }
-
-  return svg.replace('<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="0" height="0" viewBox="0 0 0 0" version="1.1">',
-    '<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="' + width + '" height="' + height + '" viewBox="' + x + ' ' + y + ' ' + width + ' ' + height + '" version="1.1">');
+  return result;
 }
 
 /**
@@ -315,6 +293,9 @@ function getOptimizationCandidate(candidate) {
       // store exit point and follow both outgoing paths to check if the end in the entry point forming a complete candidate
       candidate.exitPoint = candidate.currentElement;
 
+      // deepcopy leads to incomplete objects -> check suitability of first path on copy, afterwards analyze graph for corresponding path
+      let pathChoice = 1;
+
       // follow first path
       let pathOneCandidate = lodash.cloneDeep(candidate);
       let pathOneSequenceFlow = candidate.currentElement.outgoing[0];
@@ -327,13 +308,15 @@ function getOptimizationCandidate(candidate) {
       // check if candidate is complete or invalid
       if (pathOneResult !== undefined) {
         console.log('Found suitable candidate loop!');
-        return pathOneResult;
+        pathChoice = 0;
+      } else {
+        console.log('First path did not result in valid candidate. Following second path...');
       }
-      console.log('First path did not result in valid candidate. Following second path...');
+
 
       // follow second path
       let pathTwoCandidate = candidate;
-      let pathTwoSequenceFlow = candidate.currentElement.outgoing[1];
+      let pathTwoSequenceFlow = candidate.currentElement.outgoing[pathChoice];
       let pathTwoNextElement = pathTwoSequenceFlow.targetRef;
       pathTwoCandidate.expression = pathTwoSequenceFlow.conditionExpression;
       pathTwoCandidate.containedElements.push(candidate.currentElement, pathTwoSequenceFlow);

@@ -58,7 +58,11 @@ const {
   getHybridRuntimeProvenance,
   setHybridRuntimeProvenance,
   getAWSRuntimeHandlerEndpoint,
-  setAWSRuntimeHandlerEndpoint
+  setAWSRuntimeHandlerEndpoint,
+  getLocalQRMPath,
+  setLocalQRMPath,
+  getGitHubToken,
+  setGitHubToken
 } = require('./framework-config');
 
 const {
@@ -302,7 +306,9 @@ renderer.on('config:get-form-modal', function(done) {
     awsRuntimeHandlerEndpoint: getAWSRuntimeHandlerEndpoint(),
     scriptSplitterEndpoint: getScriptSplitterEndpoint(),
     scriptSplitterThreshold: getScriptSplitterThreshold(),
-    hybridRuntimeProvenance: getHybridRuntimeProvenance()
+    hybridRuntimeProvenance: getHybridRuntimeProvenance(),
+    localQRMPath: getLocalQRMPath(),
+    githubToken: getGitHubToken()
   };
   done(null, configurationJson);
 });
@@ -323,6 +329,8 @@ renderer.on('config:set-from-modal', function(config) {
   setScriptSplitterEndpoint(config.scriptSplitterEndpoint);
   setScriptSplitterThreshold(config.scriptSplitterThreshold);
   setHybridRuntimeProvenance(config.hybridRuntimeProvenance);
+  setLocalQRMPath(config.localQRMPath);
+  setGitHubToken(config.githubToken);
 });
 
 // plugin toggling //////////

@@ -22,5 +22,7 @@ module.exports = {
   githubUsername: process.env.QRM_USERNAME,
   githubRepositoryName: process.env.QRM_REPONAME,
   githubRepositoryPath: process.env.QRM_REPOPATH,
-  hybridRuntimeProvenance: process.env.PROVENANCE_COLLECTION || false
+  githubToken: process.env.GITHUB_TOKEN,
+  hybridRuntimeProvenance: process.env.PROVENANCE_COLLECTION || false,
+  localQRMPath: process.env.LOCAL_QRM_PATH
 };

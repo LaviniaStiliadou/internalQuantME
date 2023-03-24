@@ -63,9 +63,23 @@ export default class QuantMERenderer extends BpmnRenderer {
     }
 
     this.quantMeHandlers = {
-      [consts.QUANTUM_HARDWARE_SELECTION_SUBPROCESS]: function(self, parentGfx, element) {
-        var subprocess = self.renderer('bpmn:SubProcess')(parentGfx, element);
+      [consts.HYBRID_RUNTIME_GROUP]: function(self, parentGfx, element) {
+        var group = self.renderer('bpmn:Group')(parentGfx, element);
 
+        var pathData = quantMEPathMap.getPath('GROUP_HYBRID_RUNTIME');
+
+        drawPath(parentGfx, pathData, {
+          transform:'scale(0.2)',
+          strokeWidth: 0.5,
+          fill: getFillColor(element, '#FFFFFF'),
+          stroke: getStrokeColor(element, defaultStrokeColor)
+        });
+
+        return group;
+      },
+      [consts.QUANTUM_HARDWARE_SELECTION_SUBPROCESS]: function(self, parentGfx, element) {
+        element.businessObject.triggeredByEvent = undefined;
+        var subprocess = self.renderer('bpmn:SubProcess')(parentGfx, element);
         var pathData = quantMEPathMap.getPath('SUBPROCESS_QUANTUM_HARDWARE_SELECTION');
         drawPath(parentGfx, pathData, {
           transform:'scale(0.5)',
@@ -86,6 +100,7 @@ export default class QuantMERenderer extends BpmnRenderer {
         return subprocess;
       },
       [consts.CIRCUIT_CUTTING_SUBPROCESS]: function(self, parentGfx, element) {
+        element.businessObject.triggeredByEvent = undefined;
         var subprocess = self.renderer('bpmn:SubProcess')(parentGfx, element);
         drawTaskSVG(parentGfx, 'SUBPROCESS_TYPE_CIRCUIT_CUTTING');
         return subprocess;

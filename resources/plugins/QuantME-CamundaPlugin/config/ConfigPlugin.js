@@ -128,6 +128,16 @@ export default class ConfigPlugin extends PureComponent {
           self.modeler.config.scriptSplitterThreshold = scriptSplitterEndpoint;
         }
       });
+      editorActions.register({
+        localQRMPathChanged: function(localQRMPath) {
+          self.modeler.config.localQRMPath = localQRMPath;
+        }
+      });
+      editorActions.register({
+        githubTokenChanged: function(githubToken) {
+          self.modeler.config.githubToken = githubToken;
+        }
+      });
     });
 
     // change to modeler corresponding to the active tab

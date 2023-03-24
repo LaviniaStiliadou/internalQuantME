@@ -316,3 +316,51 @@ module.exports.setAWSRuntimeHandlerEndpoint = function(endpoint) {
     app.emit('menu:action', 'awsRuntimeHandlerEndpointChanged', endpoint);
   }
 };
+
+/**
+ * Get the path for local QRMs
+ *
+ * @return {string} the specified endpoint
+ */
+module.exports.getLocalQRMPath = function() {
+  if (config.localQRMPath === undefined) {
+    return '';
+  }
+  return config.localQRMPath;
+};
+
+/**
+ * Set the path for retrieving the local QRMs
+ *
+ * @param endpoint the endpoint
+ */
+module.exports.setLocalQRMPath = function(endpoint) {
+  if (endpoint !== null && endpoint !== undefined) {
+    config.localQRMPath = endpoint;
+    app.emit('menu:action', 'localQRMPathChanged', endpoint);
+  }
+};
+
+/**
+ * Get the GitHub Token.
+ *
+ * @return {string} the specified token
+ */
+module.exports.getGitHubToken = function() {
+  if (config.githubToken === undefined) {
+    return '';
+  }
+  return config.githubToken;
+};
+
+/**
+ * Set the GitHub Token to authenticate user.
+ *
+ * @param token the token
+ */
+module.exports.setGitHubToken = function(token) {
+  if (token !== null && token !== undefined) {
+    config.githubToken = token;
+    app.emit('menu:action', 'githubTokenChanged', token);
+  }
+};

@@ -17,7 +17,8 @@ import {
   READOUT_ERROR_MITIGATION_TASK,
   RESULT_EVALUATION_TASK,
   VARIATIONAL_QUANTUM_ALGORITHM_TASK,
-  WARM_STARTING_TASK
+  WARM_STARTING_TASK,
+  HYBRID_RUNTIME_GROUP
 } from '../../../../../client/src/app/quantme/Constants';
 
 /**
@@ -25,6 +26,7 @@ import {
  */
 export default class QuantMEFactory extends BpmnFactory {
   constructor(moddle) {
+    console.log(moddle);
     super(moddle);
   }
 
@@ -42,10 +44,15 @@ export default class QuantMEFactory extends BpmnFactory {
       element.id = this._model.ids.nextPrefixed(prefix, element);
     }
 
-    // setting default for selectlist
     if (element.$type === READOUT_ERROR_MITIGATION_TASK) {
       element.mitigationMethod = 'matrixInversion';
       element.calibrationMethod = 'fullMatrix';
+    }
+
+    // setting default for selectlist
+    if (element.$type === HYBRID_RUNTIME_GROUP) {
+      console.log('set default hybrid runtime value to qiskit');
+      element.runtimeProvider = 'qiskit';
     }
 
     if (element.$type === CIRCUIT_CUTTING_SUBPROCESS) {

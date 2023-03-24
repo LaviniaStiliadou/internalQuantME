@@ -12,6 +12,8 @@
 import ReplaceMenuProvider from 'bpmn-js/lib/features/popup-menu/ReplaceMenuProvider';
 import * as quantmeReplaceOptions from './QuantMEReplaceOptions';
 import { is } from 'bpmn-js/lib/util/ModelUtil';
+import { filter } from 'min-dash';
+import { isDifferentType } from 'bpmn-js/lib/features/popup-menu/util/TypeUtil';
 
 /**
  * This class extends the default ReplaceMenuProvider with the newly introduced QuantME task types
@@ -32,12 +34,26 @@ export default class QuantMEReplaceMenuProvider extends ReplaceMenuProvider {
 
     // add additional elements to replace tasks
     if (is(element, 'bpmn:Task')) {
-      options = options.concat(super._createEntries(element, quantmeReplaceOptions.TASK));
+
+      // remove option to replace element by itself
+      var filteredOptions = filter(quantmeReplaceOptions.TASK, isDifferentType(element));
+      options = options.concat(super._createEntries(element, filteredOptions));
     }
 
     // add additional elements to replace subprocesses
     if (is(element, 'bpmn:SubProcess')) {
-      options = options.concat(super._createEntries(element, quantmeReplaceOptions.SUBPROCESS));
+
+      // remove option to replace element by itself
+      filteredOptions = filter(quantmeReplaceOptions.SUBPROCESS, isDifferentType(element));
+      options = options.concat(super._createEntries(element, filteredOptions));
+    }
+
+    // add additional elements to replace groups
+    if (is(element, 'bpmn:Group')) {
+
+      // remove option to replace element by itself
+      filteredOptions = filter(quantmeReplaceOptions.GROUP, isDifferentType(element));
+      options = options.concat(super._createEntries(element, filteredOptions));
     }
     return options;
   }

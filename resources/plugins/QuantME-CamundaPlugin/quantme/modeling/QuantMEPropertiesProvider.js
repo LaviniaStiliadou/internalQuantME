@@ -122,6 +122,8 @@ function handleQuantMETasks(element, tabs, translate) {
   const generalTab = generalTabWithId.element;
   const generalTabId = generalTabWithId.index;
 
+  console.log(generalTab);
+
   // add required properties to general tab
   const quantMEGroup = {
     id: 'quantme',
@@ -179,6 +181,9 @@ function addQuantMEEntries(group, element, translate) {
     break;
   case consts.QUANTUM_HARDWARE_SELECTION_SUBPROCESS:
     addHardwareSelectionSubprocessEntries(group, translate);
+    break;
+  case consts.HYBRID_RUNTIME_GROUP:
+    addHybridRuntimeEntries(group, translate);
     break;
   default:
     console.log('Unsupported QuantME element of type: ', element.type);
@@ -281,6 +286,10 @@ function addHardwareSelectionSubprocessEntries(group, translate) {
   QuantMEPropertyEntryHandler.addProvidersEntry(group, translate);
   QuantMEPropertyEntryHandler.addSimulatorsAllowedEntry(group, translate);
   QuantMEPropertyEntryHandler.addSelectionStrategyEntry(group, translate);
+}
+
+function addHybridRuntimeEntries(group, translate) {
+  QuantMEPropertyEntryHandler.addRuntimeProvider(group, translate);
 }
 
 function addCircuitCuttingSubprocessEntries(group, translate) {

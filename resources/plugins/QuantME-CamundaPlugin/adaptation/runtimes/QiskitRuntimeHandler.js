@@ -25,12 +25,13 @@ import { getInvalidModelingConstruct, getRequiredPrograms, getTaskOrder } from '
 /**
  * Generate a Qiskit Runtime program for the given candidate
  *
- * @param candidate the candidate to generate the Qiskit Runtime program for
- * @param modelerConfig current configuration of the modeler
+ * @param candidate the candidate's Modeler to generate the Qiskit Runtime program for
+ * @param config current configuration of the modeler
  * @param qrms the set of QRMs currently available in the framework
  * @return the updated candidate with the URL to the deployment model for the generated Qiskit Runtime program or an error message if the generation fails
  */
-export async function getQiskitRuntimeProgramDeploymentModel(candidate, modelerConfig, qrms) {
+export async function getQiskitRuntimeProgramDeploymentModel(candidate, config, qrms) {
+  console.log(candidate);
 
   // check if all contained QuantumCircuitExecutionTasks belong to an execution with IBMQ as provider
   let quantumCircuitExecutionTasks = getQuantumCircuitExecutionTasks(candidate.containedElements);
@@ -52,16 +53,20 @@ export async function getQiskitRuntimeProgramDeploymentModel(candidate, modelerC
 
   let xml = await exportXmlWrapper();
 
+  console.log(xml);
+
   // transform QuantME tasks within candidate
-  let transformationResult = await startReplacementProcess(xml, qrms, modelerConfig);
+  let transformationResult = await startReplacementProcess(xml, qrms, config, candidate);
   if (transformationResult.status === 'failed') {
     console.log('Unable to transform QuantME tasks within the candidates!');
     return { error: 'Unable to transform QuantME tasks within the candidates. Please provide valid QRMs!' };
   }
 
+
   // import transformed XML to the modeler
   let modeler = await createModelerFromXml(transformationResult.xml);
   let rootElement = getRootProcess(modeler.getDefinitions());
+  candidate.containedElements = rootElement.flowElements;
 
   // check if transformed XML contains invalid modeling constructs
   let invalidModelingConstruct = getInvalidModelingConstruct(rootElement);
@@ -71,20 +76,20 @@ export async function getQiskitRuntimeProgramDeploymentModel(candidate, modelerC
   }
 
   // check if all service tasks have either a deployment model attached and all script tasks provide the code inline and retrieve the files
-  let requiredPrograms = await getRequiredPrograms(rootElement, modelerConfig.wineryEndpoint);
+  let requiredPrograms = await getRequiredPrograms(rootElement, config.wineryEndpoint);
   if (requiredPrograms.error !== undefined) {
     return { error: requiredPrograms.error };
   }
 
   // invoke handler and return resulting hybrid program or error message
-  let runtimeGenerationResult = await invokeQiskitRuntimeHandler(candidate, requiredPrograms, modelerConfig.qiskitRuntimeHandlerEndpoint,
-    modelerConfig.hybridRuntimeProvenance, modeler);
+  let runtimeGenerationResult = await invokeQiskitRuntimeHandler(candidate, requiredPrograms, config.qiskitRuntimeHandlerEndpoint,
+    config.hybridRuntimeProvenance, modeler);
   if (runtimeGenerationResult.error !== undefined) {
     return { error: runtimeGenerationResult.error };
   }
 
   // generate the deployment model to deploy the Qiskit Runtime program and the corresponding agent
-  let deploymentModelUrl = await createDeploymentModel(candidate, runtimeGenerationResult, modelerConfig.wineryEndpoint);
+  let deploymentModelUrl = await createDeploymentModel(candidate, runtimeGenerationResult, config.wineryEndpoint);
   if (deploymentModelUrl.error !== undefined) {
     return { error: deploymentModelUrl.error };
   }
@@ -96,6 +101,7 @@ export async function getQiskitRuntimeProgramDeploymentModel(candidate, modelerC
 
   // return candidate with added deployment model URL
   return candidate;
+
 }
 
 /**
@@ -147,28 +153,31 @@ async function createDeploymentModel(candidate, programBlobs, wineryEndpoint) {
  * @return the generated Qiskit Runtime program if successful, an error message otherwise
  */
 async function invokeQiskitRuntimeHandler(candidate, requiredPrograms, qiskitRuntimeHandlerEndpoint, provenanceCollection, modeler) {
+  console.log(candidate);
 
   // remove trailing slash from endpoint
   qiskitRuntimeHandlerEndpoint = qiskitRuntimeHandlerEndpoint.endsWith('/') ? qiskitRuntimeHandlerEndpoint.slice(0, -1) : qiskitRuntimeHandlerEndpoint;
 
   // calculate the order of the tasks within the candidate required for the generation in the Qiskit Runtime handler
   let taskOrder = getTaskOrder(candidate, modeler);
-  let beforeLoop, afterLoop = null;
-  if (taskOrder.beforeLoop.length !== 0) {
-    beforeLoop = taskOrder.beforeLoop.toString();
-  }
-  if (taskOrder.afterLoop.length !== 0) {
-    afterLoop = taskOrder.afterLoop.toString();
+  let beforeLoop = createPythonArrayString(taskOrder.beforeLoop);
+  let beforeLoopGateway = createPythonArrayString(taskOrder.beforeLoopGateway);
+  let afterLoopGateway = createPythonArrayString(taskOrder.afterLoopGateway);
+  let loopCondition = [];
+  if (taskOrder.loopCondition.length !== 0) {
+    loopCondition = '[' + taskOrder.loopCondition.toString() + ']';
   }
 
   // create request containing information about the candidate and sent to Qiskit Runtime handler
   // eslint-disable-next-line no-undef
   const fd = new FormData();
   fd.append('beforeLoop', beforeLoop);
-  fd.append('afterLoop', afterLoop);
-  fd.append('loopCondition', candidate.expression.body);
+  fd.append('beforeLoopGateway', beforeLoopGateway);
+  fd.append('afterLoopGateway', afterLoopGateway);
+  fd.append('loopCondition', loopCondition);
   fd.append('requiredPrograms', requiredPrograms.programs);
   fd.append('provenanceCollection', provenanceCollection);
+  console.log(fd);
   try {
     let generationResult = await performAjax(qiskitRuntimeHandlerEndpoint + '/qiskit-runtime-handler/api/v1.0/generate-hybrid-program', fd);
 
@@ -223,4 +232,20 @@ async function invokeQiskitRuntimeHandler(candidate, requiredPrograms, qiskitRun
   } catch (e) {
     return { error: 'Unable to connect to the Qiskit Runtime handler.\nPlease check the endpoint!' };
   }
+}
+
+function createPythonArrayString(arrayOfStrings) {
+  let pythonString = '';
+  if (arrayOfStrings.length !== 0) {
+    pythonString += '[';
+    for (let i = 0; i < arrayOfStrings.length; i++) {
+      if (i < arrayOfStrings.length -1) {
+        pythonString += '[' + arrayOfStrings[i] + '], ';
+      } else {
+        pythonString += '[' + arrayOfStrings[i] + ']';
+      }
+    }
+    pythonString += ']';
+  }
+  return pythonString;
 }

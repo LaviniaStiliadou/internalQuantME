@@ -21,6 +21,7 @@ export const WARM_STARTING_TASK = 'quantme:WarmStartingTask';
 export const PARAMETER_OPTIMIZATION_TASK = 'quantme:ParameterOptimizationTask';
 export const RESULT_EVALUATION_TASK = 'quantme:ResultEvaluationTask';
 export const QUANTUM_HARDWARE_SELECTION_SUBPROCESS = 'quantme:QuantumHardwareSelectionSubprocess';
+export const HYBRID_RUNTIME_GROUP = 'quantme:HybridRuntimeGroup';
 export const CIRCUIT_CUTTING_SUBPROCESS = 'quantme:CircuitCuttingSubprocess';
 
 // Property names of the QuantME constructs
@@ -47,6 +48,7 @@ export const OBJECTIVE_FUNCTION = 'objectiveFunction';
 export const OPTIMIZER = 'optimizer';
 export const MAX_REM_COSTS = 'maxREMCosts';
 export const MAX_CM_SIZE = 'maxCMSize';
+export const RUNTIME_PROVIDER = 'runtimeProvider';
 export const WARM_STARTING_METHOD = 'warmStartingMethod';
 export const QUANTUM_ALGORITHM = 'quantumAlgorithm';
 export const CLASSICAL_ALGORTHM = 'classicalAlgorithm';
@@ -78,5 +80,5 @@ export const QUANTME_ATTRIBUTES = [
   DNN_HIDDEN_LAYER, NEIGHBORHOOD_RANGE, OBJECTIVE_FUNCTION, OPTIMIZER, MAX_REM_COSTS, MAX_CM_SIZE, WARM_STARTING_METHOD,
   QUANTUM_ALGORITHM, CLASSICAL_ALGORTHM, REPETITIONS, ROUNDED, COST_FUNCTION, ETA, ALPHA, ALGORITHMIC_PROBLEM,
   MAX_ITERATIONS, TOLERANCE_THRESHOLD, LEARNING_RATE, CUTTING_METHOD, MAX_SUBCIRCUIT_WIDTH,
-  MAX_NUMBER_OF_CUTS, MAXIMUM_NUM_SUBCIRCUITS
+  MAX_NUMBER_OF_CUTS, MAXIMUM_NUM_SUBCIRCUITS, RUNTIME_PROVIDER
 ];

@@ -1338,3 +1338,35 @@ export function addMitigationMethodVQATaskEntry(group, translate) {
     }
   }));
 }
+
+export function addRuntimeProvider(group, translate) {
+  group.entries.push(EntryFactory.selectBox({
+    id: consts.RUNTIME_PROVIDER,
+    label: translate('Runtime Provider'),
+    selectOptions: [
+      { value:'qiskit',name:'Qiskit' } , { value:'aws',name:'AWS' }
+    ],
+    modelProperty: consts.RUNTIME_PROVIDER,
+
+    get: function(element, node) {
+      let bo = ModelUtil.getBusinessObject(element);
+      let runtimeProvider = bo && bo.runtimeProvider;
+      return { runtimeProvider: runtimeProvider };
+    },
+
+    set: function(element, values, node) {
+      let bo = ModelUtil.getBusinessObject(element);
+      return CmdHelper.updateBusinessObject(element, bo, {
+        runtimeProvider: values.runtimeProvider || undefined
+      });
+    },
+
+    validate: function(element, values, node) {
+      return true;
+    },
+
+    hidden: function(element, node) {
+      return false;
+    }
+  }));
+}

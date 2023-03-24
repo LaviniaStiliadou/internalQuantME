@@ -32,6 +32,8 @@ export default function ConfigModal({ initValues, onClose }) {
   const [scriptSplitterThreshold, setScriptSplitterThreshold] = useState(initValues.scriptSplitterThreshold);
   const [hybridRuntimeProvenance, setHybridRuntimeProvenance] = useState(initValues.hybridRuntimeProvenance);
   const [awsRuntimeHandlerEndpoint, setAWSRuntimeHandlerEndpoint] = useState(initValues.awsRuntimeHandlerEndpoint);
+  const [localQRMPath, setLocalQRMPath] = useState(initValues.localQRMPath);
+  const [githubToken, setGitHubToken ] = useState(initValues.githubToken);
 
   let hybridRuntimeProvenanceBoolean = (hybridRuntimeProvenance === 'true');
 
@@ -49,7 +51,9 @@ export default function ConfigModal({ initValues, onClose }) {
     awsRuntimeHandlerEndpoint,
     scriptSplitterEndpoint,
     scriptSplitterThreshold,
-    hybridRuntimeProvenance
+    hybridRuntimeProvenance,
+    localQRMPath,
+    githubToken
   });
 
   // refs to enable changing the state through the plugin
@@ -213,6 +217,31 @@ export default function ConfigModal({ initValues, onClose }) {
                       name="qrmRepoPath"
                       value={qrmRepoPath}
                       onChange={event => setQrmRepoPath(event.target.value)}/>
+                  </td>
+                </tr>
+                <tr>
+                  <td align="right">Local QRM Repository Path:</td>
+                  <td align="left">
+                    <input
+                      type="string"
+                      name="localQRMPath"
+                      value={localQRMPath}
+                      onChange={event => setLocalQRMPath(event.target.value)}/>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+            <h3>GitHub Authentication</h3>
+            <table>
+              <tbody>
+                <tr className="spaceUnder">
+                  <td align="right">GitHub Token <a href="https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/creating-a-personal-access-token"> [1]</a>:</td>
+                  <td align="left">
+                    <input
+                      type="string"
+                      name="githubToken"
+                      value={githubToken}
+                      onChange={event =>setGitHubToken(event.target.value)}/>
                   </td>
                 </tr>
               </tbody>
