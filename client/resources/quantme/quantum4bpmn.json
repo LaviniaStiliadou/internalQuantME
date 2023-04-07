@@ -418,6 +418,243 @@
             "type": "String"
           }
         ]
+      },
+      {
+        "name": "Policy",
+        "superClass": [ "quantme:PolicyType" ],
+        "properties": [
+          {
+            "name": "availabilityWeight",
+            "isAttr": true,
+            "type": "String"
+          },
+          {
+            "name": "customWeight",
+            "isAttr": true,
+            "type": "String"
+          },
+          {
+            "name": "moneyWeight",
+            "isAttr": true,
+            "type": "String"
+          },
+          {
+            "name": "privacyWeight",
+            "isAttr": true,
+            "type": "String"
+          },
+          {
+            "name": "threshold",
+            "isAttr": true,
+            "type": "String"
+          },
+          {
+            "name": "dataRetention",
+            "isAttr": true,
+            "type": "String"
+          },
+          {
+            "name": "marketingCommunication",
+            "isAttr": true,
+            "type": "String"
+          },
+          {
+            "name": "thirdPartyQPU",
+            "isAttr": true,
+            "type": "String"
+          },
+          {
+            "name": "policyOne",
+            "isAttr": true,
+            "type": "String"
+          },
+          {
+            "name": "policyTwo",
+            "isAttr": true,
+            "type": "String"
+          },
+          {
+            "name": "policyThree",
+            "isAttr": true,
+            "type": "String"
+          },
+          {
+            "name": "policyFour",
+            "isAttr": true,
+            "type": "String"
+          }
+        ]
+      },
+      {
+        "name": "PolicyType",
+        "superClass": ["bpmn:Event"],
+        "isAbstract": true,
+        "properties": [
+          {
+            "name": "weight",
+            "isAttr": true,
+            "type": "String"
+          },
+          {
+            "name": "availabilityPolicy",
+            "isMany": true,
+            "type": "AvailabilityPolicyType"
+          },
+          {
+            "name": "customEnvironmentPolicy",
+            "isMany": true,
+            "type": "CustomEnvironmentPolicyType"
+          },
+          {
+            "name": "moneyPolicy",
+            "isMany": true,
+            "type": "MoneyPolicyType"
+          },
+          {
+            "name": "privacyPolicy",
+            "isMany": true,
+            "type": "PrivacyPolicyType"
+          }
+        ]
+      },
+      {
+        "name": "AvailabilityPolicy",
+        "superClass": [ "bpmn:Event" ],
+        "properties": [
+          {
+            "name": "devices",
+            "isAttr": true,
+            "type": "String"
+          },
+          {
+            "name": "weight",
+            "isAttr": true,
+            "type": "String"
+          },
+          {
+            "name": "simulatorsAllowed",
+            "isAttr": true,
+            "type": "String"
+          }
+        ]
+      },
+      {
+        "name": "CustomEnvironmentPolicy",
+        "superClass": [ "bpmn:Event" ],
+        "properties": [
+          {
+            "name": "weight",
+            "isAttr": true,
+            "type": "String"
+          }
+        ]
+      },
+      {
+        "name": "MoneyPolicy",
+        "superClass": [ "bpmn:Event" ],
+        "properties": [
+          {
+            "name": "weight",
+            "isAttr": true,
+            "type": "String"
+          },
+          {
+            "name": "threshold",
+            "isAttr": true,
+            "type": "String"
+          }
+        ]
+      },
+      {
+        "name": "PrivacyPolicy",
+        "superClass": [ "bpmn:Event" ],
+        "properties": [
+          {
+            "name": "weight",
+            "isAttr": true,
+            "type": "String"
+          },
+          {
+            "name": "dataRetention",
+            "isAttr": true,
+            "type": "String"
+          },
+          {
+            "name": "thirdPartyQPU",
+            "isAttr": true,
+            "type": "String"
+          },
+          {
+            "name": "marketingCommunication",
+            "isAttr": true,
+            "type": "String"
+          }  
+        ]
+      },
+      {
+        "name": "AvailabilityPolicyType",
+        "properties": [
+          {
+            "name": "devices",
+            "isAttr": true,
+            "type": "String"
+          },
+          {
+            "name": "simulatorsAllowed",
+            "isAttr": true,
+            "type": "String"
+          }
+        ]
+      },
+      {
+        "name": "CustomEnvironmentPolicyType",
+        "properties": [
+          {
+            "name": "customWeight",
+            "isAttr": true,
+            "type": "String"
+          }
+        ]
+      },
+      {
+        "name": "MoneyPolicyType",
+        "properties": [
+          {
+            "name": "weight",
+            "isAttr": true,
+            "type": "String"
+          },
+          {
+            "name": "threshold",
+            "isBody": true,
+            "type": "String"
+          }
+        ]
+      },
+      {
+        "name": "PrivacyPolicyType",
+        "properties": [
+          {
+            "name": "weight",
+            "isAttr": true,
+            "type": "String"
+          },
+          {
+            "name": "marketingCommunication",
+            "isAttr": true,
+            "type": "String"
+          },
+          {
+            "name": "dataRetention",
+            "isAttr": true,
+            "type": "Boolean"
+          },
+          {
+            "name": "thirdPartyQPU",
+            "isAttr": true,
+            "type": "Boolean"
+          }
+        ]
       }
     ],
     "enumerations": [],

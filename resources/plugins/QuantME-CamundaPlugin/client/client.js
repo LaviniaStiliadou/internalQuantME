@@ -15,10 +15,13 @@ import QuantMEController from '../quantme/control/QuantMEController';
 import ConfigPlugin from '../config/ConfigPlugin';
 import DeploymentPlugin from '../deployment/services/DeploymentPlugin';
 import AdaptationPlugin from '../adaptation/AdaptationPlugin';
+import CostEstimatorPlugin from '../costEstimator/CostEstimatorPlugin';
 
 registerBpmnJSPlugin(quantmeModelingModule);
 
 registerClientExtension(AdaptationPlugin);
+
+registerClientExtension(CostEstimatorPlugin);
 
 registerClientExtension(QuantMEController);
 

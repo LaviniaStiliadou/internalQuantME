@@ -24,5 +24,9 @@ module.exports = {
   githubRepositoryPath: process.env.QRM_REPOPATH,
   githubToken: process.env.GITHUB_TOKEN,
   hybridRuntimeProvenance: process.env.PROVENANCE_COLLECTION || false,
-  localQRMPath: process.env.LOCAL_QRM_PATH
+  localQRMPath: process.env.LOCAL_QRM_PATH,
+  policyHandlerEndpoint: process.env.policyHandlerEndpoint || 'http://localhost:8892',
+  ibmqToken: process.env.IBMQ_TOKEN,
+  awsAccessKey: process.env.AWS_ACCESS_KEY_ID,
+  awsSecretAccessKey: process.env.AWS_SECRET_ACCESS_KEY
 };

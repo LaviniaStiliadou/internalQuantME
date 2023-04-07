@@ -14,12 +14,16 @@ import QuantMEReplaceMenuProvider from './QuantMEReplaceMenuProvider';
 import QuantMEFactory from './QuantMEFactory';
 import QuantMEPathMap from './QuantMEPathMap';
 import QuantMEPropertiesProvider from './QuantMEPropertiesProvider';
+import QuantMEPalette from './QuantMEPalette';
+import QuantMERules from './QuantMERules';
 
 export default {
-  __init__: ['quantMERenderer', 'quantMEReplaceMenu', 'bpmnFactory', 'quantMEPathMap', 'propertiesProvider'],
+  __init__: ['quantMERenderer', 'quantMEReplaceMenu', 'bpmnFactory', 'quantMEPathMap', 'quantMEPalette', 'quantMERules', 'propertiesProvider'],
   quantMERenderer: ['type', QuantMERenderer],
   quantMEReplaceMenu: ['type', QuantMEReplaceMenuProvider],
   bpmnFactory: ['type', QuantMEFactory],
   quantMEPathMap: ['type', QuantMEPathMap],
+  quantMEPalette: [ 'type', QuantMEPalette],
+  quantMERules: ['type', QuantMERules],
   propertiesProvider: ['type', QuantMEPropertiesProvider]
 };

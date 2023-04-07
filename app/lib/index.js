@@ -62,7 +62,13 @@ const {
   getLocalQRMPath,
   setLocalQRMPath,
   getGitHubToken,
-  setGitHubToken
+  setGitHubToken,
+  getPolicyHandlerEndpoint,
+  setPolicyHandlerEndpoint,
+  getAwsAccessKey,
+  setAwsAccessKey,
+  getAwsSecretAccessKey,
+  setAwsSecretAccessKey
 } = require('./framework-config');
 
 const {
@@ -331,6 +337,9 @@ renderer.on('config:set-from-modal', function(config) {
   setHybridRuntimeProvenance(config.hybridRuntimeProvenance);
   setLocalQRMPath(config.localQRMPath);
   setGitHubToken(config.githubToken);
+  setPolicyHandlerEndpoint(config.policyHandlerEndpoint);
+  setAwsAccessKey(config.awsAccessKey);
+  setAwsSecretAccessKey(config.awsSecretAccessKey);
 });
 
 // plugin toggling //////////

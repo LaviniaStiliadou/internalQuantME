@@ -23,6 +23,7 @@ export const RESULT_EVALUATION_TASK = 'quantme:ResultEvaluationTask';
 export const QUANTUM_HARDWARE_SELECTION_SUBPROCESS = 'quantme:QuantumHardwareSelectionSubprocess';
 export const HYBRID_RUNTIME_GROUP = 'quantme:HybridRuntimeGroup';
 export const CIRCUIT_CUTTING_SUBPROCESS = 'quantme:CircuitCuttingSubprocess';
+export const POLICY = 'quantme:Policy';
 
 // Property names of the QuantME constructs
 export const ALGORITHM = 'algorithm';

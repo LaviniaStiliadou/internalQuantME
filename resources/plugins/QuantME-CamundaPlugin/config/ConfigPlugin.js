@@ -138,6 +138,30 @@ export default class ConfigPlugin extends PureComponent {
           self.modeler.config.githubToken = githubToken;
         }
       });
+      editorActions.register({
+        policyHandlerEndpointChanged: function(policyHandlerEndpoint) {
+          self.modeler.config.policyHandlerEndpoint = policyHandlerEndpoint;
+          eventBus.fire('config.updated', self.modeler.config);
+        }
+      });
+      editorActions.register({
+        ibmqTokenChanged: function(ibmqToken) {
+          self.modeler.config.ibmqToken = ibmqToken;
+          eventBus.fire('config.updated', self.modeler.config);
+        }
+      });
+      editorActions.register({
+        awsAccessKeyChanged: function(awsAccessKey) {
+          self.modeler.config.awsAccessKey = awsAccessKey;
+          eventBus.fire('config.updated', self.modeler.config);
+        }
+      });
+      editorActions.register({
+        awsSecretAccessKeyChanged: function(awsSecretAccessKey) {
+          self.modeler.config.awsSecretAccessKey = awsSecretAccessKey;
+          eventBus.fire('config.updated', self.modeler.config);
+        }
+      });
     });
 
     // change to modeler corresponding to the active tab

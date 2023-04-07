@@ -364,3 +364,99 @@ module.exports.setGitHubToken = function(token) {
     app.emit('menu:action', 'githubTokenChanged', token);
   }
 };
+
+/**
+ * Get the endpoint of the Policy Handler
+ *
+ * @return {string} the specified endpoint
+ */
+module.exports.getPolicyHandlerEndpoint = function() {
+  if (config.policyHandlerEndpoint === undefined) {
+    return '';
+  }
+  return config.policyHandlerEndpoint;
+};
+
+/**
+ * Set the endpoint of the Policy Handler
+ *
+ * @param endpoint the endpoint
+ */
+module.exports.setPolicyHandlerEndpoint = function(endpoint) {
+  if (endpoint !== null && endpoint !== undefined) {
+    config.policyHandlerEndpoint = endpoint;
+    app.emit('menu:action', 'policyHandlerEndpointChanged', endpoint);
+  }
+};
+
+/**
+ * Get the IBMQ Token
+ *
+ * @return {string} the specified endpoint
+ */
+module.exports.getIBMQToken= function() {
+  if (config.ibmqToken === undefined) {
+    return '';
+  }
+  return config.ibmqToken;
+};
+
+/**
+ * Set the IBMQ Token
+ *
+ * @param endpoint the endpoint
+ */
+module.exports.setIBMQToken = function(endpoint) {
+  if (endpoint !== null && endpoint !== undefined) {
+    config.ibmqToken = endpoint;
+    app.emit('menu:action', 'ibmqTokenChanged', endpoint);
+  }
+};
+
+/**
+ * Get the AWS Access Key
+ *
+ * @return {string} the specified endpoint
+ */
+module.exports.getAwsAccessKey = function() {
+  if (config.awsAccessKey === undefined) {
+    return '';
+  }
+  return config.awsAccessKey;
+};
+
+/**
+ * Set the AWS Access Key
+ *
+ * @param endpoint the endpoint
+ */
+module.exports.setAwsAccessKey = function(endpoint) {
+  if (endpoint !== null && endpoint !== undefined) {
+    config.awsAccessKey = endpoint;
+    app.emit('menu:action', 'awsAccessKeyChanged', endpoint);
+  }
+};
+
+/**
+ * Get the AWS Secret Access Key
+ *
+ * @return {string} the specified endpoint
+ */
+module.exports.getAwsSecretAccessKey = function() {
+  if (config.awsSecretAccessKey === undefined) {
+    return '';
+  }
+  return config.awsSecretAccessKey;
+};
+
+/**
+ * Set the AWS Secret Access Key
+ *
+ * @param endpoint the endpoint
+ */
+module.exports.setAwsSecretAccessKey = function(endpoint) {
+  if (endpoint !== null && endpoint !== undefined) {
+    config.awsSecretAccessKey = endpoint;
+    app.emit('menu:action', 'awsSecretAccessKeyChanged', endpoint);
+  }
+};

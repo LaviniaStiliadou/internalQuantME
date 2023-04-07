@@ -32,6 +32,9 @@ export default class AdaptationPlugin extends PureComponent {
     // modelers for all tabs to enable switching between them
     this.modelers = {};
 
+    this.handleAdaptationClosed = this.handleAdaptationClosed.bind(this);
+    this.handleRewriteClosed = this.handleRewriteClosed.bind(this);
+
     this.state = defaultState;
 
     // get QuantME component from the backend, e.g., to retrieve current QRMs
@@ -238,7 +241,7 @@ export default class AdaptationPlugin extends PureComponent {
       <Fill slot="toolbar">
         <button type="button" className="src-app-primitives-Button__Button--3Ffn0"
           title="Open menu to analyse and improve hybrid loops"
-          onClick={() => this.detectOptimizationCandidates()}>
+          onClick={() => { this.detectOptimizationCandidates(); this.setState({ adaptationOpen: true }); } }>
           <span className="hybrid-loop-adaptation"><span className="indent">Improve Hybrid Loops</span></span>
         </button>
       </Fill>

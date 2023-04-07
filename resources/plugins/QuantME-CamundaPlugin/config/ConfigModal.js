@@ -34,6 +34,10 @@ export default function ConfigModal({ initValues, onClose }) {
   const [awsRuntimeHandlerEndpoint, setAWSRuntimeHandlerEndpoint] = useState(initValues.awsRuntimeHandlerEndpoint);
   const [localQRMPath, setLocalQRMPath] = useState(initValues.localQRMPath);
   const [githubToken, setGitHubToken ] = useState(initValues.githubToken);
+  const [policyHandlerEndpoint, setPolicyHandlerEndpoint] = useState(initValues.policyHandlerEndpoint);
+  const [ibmqToken, setIBMQToken] = useState(initValues.ibmqToken);
+  const [awsAccessKey, setAwsAccessKey] = useState(initValues.awsAccessKey);
+  const [awsSecretAccessKey, setAwsSecretAccessKey] = useState(initValues.awsSecretAccessKey);
 
   let hybridRuntimeProvenanceBoolean = (hybridRuntimeProvenance === 'true');
 
@@ -53,7 +57,11 @@ export default function ConfigModal({ initValues, onClose }) {
     scriptSplitterThreshold,
     hybridRuntimeProvenance,
     localQRMPath,
-    githubToken
+    githubToken,
+    policyHandlerEndpoint,
+    ibmqToken,
+    awsAccessKey,
+    awsSecretAccessKey
   });
 
   // refs to enable changing the state through the plugin
@@ -270,6 +278,56 @@ export default function ConfigModal({ initValues, onClose }) {
                       name="awsRuntimeHandlerEndpoint"
                       value={awsRuntimeHandlerEndpoint}
                       onChange={event => setAWSRuntimeHandlerEndpoint(event.target.value)}/>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+            <h3>Policy Handler Endpoint</h3>
+            <table>
+              <tbody>
+                <tr className="spaceUnder">
+                  <td align="right">Policy Handler Endpoint:</td>
+                  <td align="left">
+                    <input
+                      type="string"
+                      name="policyHandlerEndpoint"
+                      value={policyHandlerEndpoint}
+                      onChange={event => setPolicyHandlerEndpoint(event.target.value)}/>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+            <h3>Credentials</h3>
+            <table>
+              <tbody>
+                <tr className="spaceUnder">
+                  <td align="right">IBMQ Token:</td>
+                  <td align="left">
+                    <input
+                      type="string"
+                      name="ibmqToken"
+                      value={ibmqToken}
+                      onChange={event => setIBMQToken(event.target.value)}/>
+                  </td>
+                </tr>
+                <tr>
+                  <td align="right">AWS Access Key <a href="https://docs.aws.amazon.com/cli/latest/userguide/cli-configure-files"> [1]</a>:</td>
+                  <td align="left">
+                    <input
+                      type="string"
+                      name="awsAccessKey"
+                      value={awsAccessKey}
+                      onChange={event => setAwsAccessKey(event.target.value)}/>
+                  </td>
+                </tr>
+                <tr>
+                  <td align="right">AWS Secret Access Key:</td>
+                  <td align="left">
+                    <input
+                      type="string"
+                      name="awsSecretAccessKey"
+                      value={awsSecretAccessKey}
+                      onChange={event => setAwsSecretAccessKey(event.target.value)}/>
                   </td>
                 </tr>
               </tbody>
