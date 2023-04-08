@@ -22,11 +22,14 @@ function calculateCosts(){
 
 }
 
+
 export default function RewriteModal({ onClose, candidates }) {
 
   // add an entry to the model per candidate
+  const [hiddenSimulators, setSimulatorsR] = useState(true)
   let candidateButtons = [];
   let candidatesHtml = [];
+  let simulators = [];
   for (let i = 0; i < candidates.length; i++) {
     let policiesTable = [];
     policiesTable.push(<tr key={-1}><th>Task ID</th><th>Quality metric</th><th>Weight</th></tr>);
@@ -35,6 +38,7 @@ export default function RewriteModal({ onClose, candidates }) {
     let candidate = candidates[i];
     let policies = candidates[i].policy;
     let hiddenPolicy = false;
+    let evaluateRuntime = true;
     if (undefined !== policies && policies.length) {
       for (let j = 0; j < policies.length; j++) {
         console.log('POLICY');
@@ -61,27 +65,18 @@ export default function RewriteModal({ onClose, candidates }) {
       qpus.push('IonQ')
       qpus.push('QuEra');
       qpus.push('Xanadu');
-
+    let qpushtml = [];
+     //qpushtml.push(<input className="cmd-change-menu__header input" type="taskQPUs" id="taskQPUs" name="taskQPUs"/>);
     if (i === 0) {
-
-      // activate first button and display details as default
-      candidateButtons.push(<button id={'candidate-button' + { i }} key={i} className="adaptation-tab-button active" onClick={() => openTab(i)}>Candidate {i + 1}</button>);
-
-      candidatesHtml.push(<div id={'candidate-html' + { i }} key={i} hidden={false}>
-        <h3 className='spaceAbove'>Cost Estimator Qiskit</h3>
-        The execution time was: 
-        <h3 class="cmd-change-menu__title">
-            Total costs: 0 USD
-          </h3>
-        <h3 className='spaceAbove'>Cost Estimator AWS</h3>
-        <label for="region">Choose a region:</label>
-          <select name="region" id="region" onChange={(e) =>computeQPU(e)}>
-            <option value="us-east-1">US East (North Virginia)</option>
-            <option value="us-west-1" selected>US West (North California)</option>
-            <option value="us-west-2">US West (Oregon)</option>
-            <option value="eu-west-2">Europe (London)</option>
-          </select>
-          <details class="details-example"><summary>Open simulators</summary>
+      const data = [
+        {x: 0, y: 8},
+        {x: 1, y: 5},
+        {x: 2, y: 4},
+        {x: 3, y: 9},
+        {x: 4, y: 1},
+      ];
+      /**
+       * <details class="details-example"><summary>Open simulators</summary>
           <label class="cmd-change-menu__header label" for="fname1">Number of Amazon Braket SV1 simulations</label>
           <input class="cmd-change-menu__header input" type="text1" id="sv1NumberSimulations" name="sv1NumberSimulations"/>
           <label class="cmd-change-menu__header label" for="fname2">Average duration (minutes) of SV1 simulations</label>
@@ -96,6 +91,7 @@ export default function RewriteModal({ onClose, candidates }) {
           <input class="cmd-change-menu__header input" type="text6" id="dm1AverageDuration" name="dm1AverageDuration"/>
           </details>
           <details class="details-example2"><summary>Open QPUs</summary>
+          {qpushtml}
           <label class="cmd-change-menu__header label" for="task7">Number of Quantum Tasks for </label><input class="cmd-change-menu__header input" type="taskQPUs" id="taskQPUs" name="taskQPUs"/>
           <label class="cmd-change-menu__header label" for="fname7">Average shots per task</label><input class="cmd-change-menu__header input" type="shots" id="shots" name="shots"/>
           </details>
@@ -108,6 +104,25 @@ export default function RewriteModal({ onClose, candidates }) {
             Total costs: 0 USD
           </h3>
         <h3 className='spaceAbove'>Simulators</h3>
+       */
+
+      // activate first button and display details as default
+      candidateButtons.push(<button id={'candidate-button' + { i }} key={i} className="adaptation-tab-button active" onClick={() => openTab(i)}>Candidate {i + 1}</button>);
+
+      candidatesHtml.push(<div id={'candidate-html' + { i }} key={i} hidden={false}>
+        <h3 className='spaceAbove'>Cost Estimator Qiskit</h3>
+        The execution time was: 
+        <h3 className='spaceAbove'>Cost Estimator AWS</h3>
+        <label htmlFor="region" className="label-style">Choose a region:</label>
+        <select className="select-style" name="region" id="region" key="region" onChange={(e) =>computeQPU(e)}>
+            <option key="us-east-1" value="us-east-1">US East (North Virginia)</option>
+            <option key="us-west-1" value="us-west-1">US West (North California)</option>
+            <option key="us-west-2" value="us-west-2">US West (Oregon)</option>
+            <option key="eu-west-2" value="eu-west-2">Europe (London)</option>
+        </select>
+        <label hidden={hiddenSimulators}>
+        Text input: <input name="myInput" />
+        </label>
         <img className='spaceAbove' width="400" src={candidate.candidateImage}/>
         <h3 className='spaceAbove spaceUnder' hidden={hiddenPolicy}>The candidate contains QuantMeexecutionTask where the QPU attribute is not specified:</h3>
         <table hidden={hiddenPolicy}>
@@ -122,7 +137,30 @@ export default function RewriteModal({ onClose, candidates }) {
           </tbody>
         </table>
         <h3 className='spaceAbove spaceUnder' hidden={hiddenPolicy}>Compute the hybrid runtime based on the specified quality metrics:</h3>
-        <button type="button" className="btn btn-secondary" hidden={hiddenPolicy} onClick={() => onSubmit(i, undefined, true)}>Evaluate</button>
+        <button type="button" className="btn btn-secondary" hidden={hiddenPolicy} onClick={() =>{ evaluateRuntime = true; onSubmit(i, 'Will be computed');}}>Evaluate</button>
+        <table hidden={!evaluateRuntime}>
+            <tbody>
+            <tr>
+            <th>Runtime</th>
+            <th>Availability</th>
+            <th>Custom Environment</th>
+            <th>Money</th>
+            <th>Privacy</th>
+          </tr>
+              <tr className="spaceUnder">
+                <td align="right">Qiskit Runtime</td>
+                <td align="left">
+                  <button type="button" className="btn btn-secondary" onClick={() => onSubmit(i, 'Qiskit Runtime', false)}>Rewrite Workflow</button>
+                </td>
+              </tr>
+              <tr className="spaceUnder">
+                <td align="right">AWS Runtime</td>
+                <td align="left">
+                  <button type="button" className="btn btn-secondary" onClick={() => onSubmit(i, 'AWS Runtime', false)}>Rewrite Workflow</button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
         <h3 className='spaceAbove spaceUnder' hidden={!hiddenPolicy}>The following hybrid runtimes might be used for improved execution:</h3>
         <table hidden={!hiddenPolicy}>
           <tbody>
@@ -184,8 +222,18 @@ export default function RewriteModal({ onClose, candidates }) {
     rewriteCandidateId: i,
     candidates: candidates,
     runtimeName : runtimeName,
-    candidatesRootRef: candidatesRootRef
+    candidatesRootRef: candidatesRootRef,
+    policyEvaluation: hiddenPolicy
   });
+
+
+  function computeQPU (e){
+    const target = e.target;
+    console.log(target.value);
+    //var qpushtml = []
+    //qpushtml.push(<input className="cmd-change-menu__header input" type="taskQPUs" id="taskQPUs" name="taskQPUs"/>);
+    setSimulatorsR(false)
+  }
 
   // reference to change the content depending on the selected tab
   let candidatesRootRef = React.createRef();

@@ -485,3 +485,23 @@ html, body, #container {
   background-color: #008000;
   color: #000000;
 }
+
+.select-style {
+  background-color: #f8f8f8;
+  border: none;
+  border-radius: 5px;
+  padding: 10px;
+  font-size: 16px;
+  color: #333;
+  width: 200px;
+}
+
+.select-style:hover {
+  cursor: pointer;
+}
+
+.label-style {
+  font-size: 16px;
+  color: #333;
+  margin-right: 10px;
+}

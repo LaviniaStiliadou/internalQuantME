@@ -62,16 +62,16 @@ export async function findOptimizationCandidates(modeler) {
     }
   }
 
-  // delete already existing hybrid runtime groups
+  // delete already existing hybrid runtime groups only if no policies are attached
   for (let group of groups) {
-    deleteVariationalSpheres(group, modeler);
-    console.log('Group with id ' + group.id + ' is deleted');
+      deleteVariationalSpheres(group, modeler);
+      console.log('Group with id ' + group.id + ' is deleted');
   }
 
   // draw hybrid runtime groups
   for (let candidate of optimizationCandidates) {
     candidate = await visualizeCandidateGroup(candidate, modeler);
-    generateCandidateGroup(candidate.groupBox, modeler);
+    generateCandidateGroup(candidate.groupBox, modeler, groups);
   }
 
   // return all valid optimization candidates for the analysis and rewrite modal
@@ -89,7 +89,9 @@ function deleteVariationalSpheres(group, modeler) {
   let modeling = modeler.get('modeling');
   if (is(group, 'quantme:HybridRuntimeGroup')) {
     const element = elementRegistry.get(group.id);
-    if (element != undefined) {
+    console.log(element)
+    if (element != undefined && element.attachers.length == 0) {
+      console.log("delete");
       modeling.removeElements(element);
       modeling.removeShape(element);
     }
@@ -102,13 +104,35 @@ function deleteVariationalSpheres(group, modeler) {
  * @param groupBox
  * @param modeler
  */
-async function generateCandidateGroup(groupBox, modeler) {
+async function generateCandidateGroup(groupBox, modeler, groups) {
   let definitions = modeler.getDefinitions();
   let rootElement = getRootProcess(definitions);
   const elementRegistry = modeler.get('elementRegistry');
   let rootElementBo = elementRegistry.get(rootElement.id);
   let modeling = modeler.get('modeling');
-  return modeling.createShape({ type: 'quantme:HybridRuntimeGroup' }, { x: groupBox.x, y: groupBox.y, width: groupBox.width, height: groupBox.height }, rootElementBo, {});
+  let existingIdenticalGroup = compareWithExistingGroups(groupBox.x, groups, modeler);
+  if (!existingIdenticalGroup) {
+    return modeling.createShape({ type: 'quantme:HybridRuntimeGroup' }, { x: groupBox.x, y: groupBox.y, width: groupBox.width, height: groupBox.height }, rootElementBo, {});
+  }
+  }
+  
+
+function compareWithExistingGroups(x, groups, modeler){
+  for(let group of groups){
+    const elementRegistry = modeler.get('elementRegistry');
+    console.log(elementRegistry);
+    const element = elementRegistry.get(group.id);
+    console.log("GRUPPE");
+    console.log(group);
+    console.log(group.di.bounds.x);
+    console.log(x);
+    console.log(element);
+    if(element != undefined){
+    if(group.di.bounds.x == x && element.attachers.length >0){
+      return true;
+    }}
+  }
+  return false;
 }
 
 /**

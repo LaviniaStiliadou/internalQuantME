@@ -21,11 +21,12 @@ let QuantMEPropertyEntryHandler = require('./QuantMEPropertyEntryHandler');
  * This class extends the default PropertiesActivator with the properties of the newly introduced QuantME task types
  */
 export default class QuantMEPropertiesProvider extends PropertiesActivator {
-  constructor(eventBus, canvas, bpmnFactory, elementRegistry, elementTemplates, translate) {
+  constructor(eventBus, canvas, bpmnFactory, elementRegistry, elementTemplates, translate, moddle) {
     super(eventBus);
     this.camundaPropertiesProvider = new CamundaPropertiesProvider(eventBus, canvas, bpmnFactory, elementRegistry, elementTemplates, translate);
     this.bpmnFactory = bpmnFactory;
     this.translate = translate;
+    this.moddle = moddle;
 
     // subscribe to config updates to retrieve the currently defined Winery endpoint
     const self = this;
@@ -35,11 +36,12 @@ export default class QuantMEPropertiesProvider extends PropertiesActivator {
   }
 
   getTabs(element) {
+    console.log(element);
     const tabs = this.camundaPropertiesProvider.getTabs(element);
 
     // add properties of QuantME tasks to panel
     if (element.type && element.type.startsWith('quantme:')) {
-      handleQuantMETasks(element, tabs, this.translate);
+      handleQuantMETasks(element, tabs, this.translate, this.moddle);
     }
 
     // update ServiceTasks with the deployment extension
@@ -110,7 +112,7 @@ function handleServiceTask(element, tabs, translate, bpmnFactory, wineryEndpoint
  * @param translate the translate object required to translate the labels
  * @return the updated set of tabs with the added QuantME specific properties
  */
-function handleQuantMETasks(element, tabs, translate) {
+function handleQuantMETasks(element, tabs, translate, moddle) {
 
   // search for general tab in properties to add QuantME properties
   let generalTabWithId = findById(tabs, 'general');
@@ -130,7 +132,7 @@ function handleQuantMETasks(element, tabs, translate) {
     label: translate('QuantME Properties'),
     entries: []
   };
-  addQuantMEEntries(quantMEGroup, element, translate);
+  addQuantMEEntries(quantMEGroup, element, translate, moddle);
   generalTab.groups.push(quantMEGroup);
   tabs[generalTabId] = generalTab;
 
@@ -144,7 +146,7 @@ function handleQuantMETasks(element, tabs, translate) {
  * @param element the QuantME element
  * @param translate utility to translate
  */
-function addQuantMEEntries(group, element, translate) {
+function addQuantMEEntries(group, element, translate, moddle) {
   switch (element.type) {
   case consts.QUANTUM_COMPUTATION_TASK:
     addQuantumComputationTaskEntries(group, translate);
@@ -184,6 +186,21 @@ function addQuantMEEntries(group, element, translate) {
     break;
   case consts.HYBRID_RUNTIME_GROUP:
     addHybridRuntimeEntries(group, translate);
+    break;
+  case consts.POLICY:
+    addPolicyEntries(group, translate, moddle, element);
+    break;
+  case consts.MONEY_POLICY:
+    addMoneyPolicyEntries(group, translate, moddle, element);
+    break;
+  case consts.AVAILABILITY_POLICY:
+    addAvailabilityPolicyEntries(group, translate, moddle, element);
+    break;
+  case consts.CUSTOM_ENVIRONMENT_POLICY:
+    addCustomEnvironmentPolicyEntries(group, translate, moddle, element);
+    break;
+  case consts.PRIVACY_POLICY:
+    addPrivacyPolicyEntries(group, translate, moddle, element);
     break;
   default:
     console.log('Unsupported QuantME element of type: ', element.type);
@@ -299,11 +316,28 @@ function addCircuitCuttingSubprocessEntries(group, translate) {
   QuantMEPropertyEntryHandler.addNumberOfSubcircuitsEntry(group, translate);
 }
 
+function addPolicyEntries(group, translate, moddle, element){
+  QuantMEPropertyEntryHandler.addPolicyEntries(group, translate, moddle, element);
+}
+function addMoneyPolicyEntries(group, translate, moddle, element){
+  QuantMEPropertyEntryHandler.addMoneyPolicyNoneEntries(group, translate, moddle, element);
+}
+function addAvailabilityPolicyEntries(group, translate, moddle, element){
+  QuantMEPropertyEntryHandler.addAvailabilityPolicyNoneEntries(group, translate, moddle, element);
+}
+function addPrivacyPolicyEntries(group, translate, moddle, element){
+  QuantMEPropertyEntryHandler.addPrivacyPolicyNoneEntries(group, translate, moddle, element);
+}
+function addCustomEnvironmentPolicyEntries(group, translate, moddle, element){
+  //QuantMEPropertyEntryHandler.addCustomEnvironmentPolicyNoneEntries(group, translate, moddle, element);
+}
+
 QuantMEPropertiesProvider.$inject = [
   'eventBus',
   'canvas',
   'bpmnFactory',
   'elementRegistry',
   'elementTemplates',
-  'translate'
+  'translate',
+  'moddle'
 ];

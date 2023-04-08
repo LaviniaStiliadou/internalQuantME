@@ -29,7 +29,22 @@ export default function RewriteModal({ onClose, candidates }) {
     let executionTasks = [];
     executionTasks.push(<tr key={-1}><th>Task ID</th><th>QPU</th></tr>);
     let candidate = candidates[i];
-    let policies = candidates[i].policy;
+    console.log(candidate);
+    let groups = candidate.currentElement.$parent.artifacts;
+    const elementRegistry = candidate.modeler.get('elementRegistry');
+    console.log(elementRegistry);
+    let group = groups[0];
+    for(let runtimeGroup of groups){
+      const element = elementRegistry.get(runtimeGroup.id);
+      if(element != undefined){
+        console.log(element);
+      if(candidate.groupBox.x == element.x){
+        group = element;
+      }}
+    }
+    let evaluateRuntime = false;
+  
+    let policies = group.attachers;
     let hiddenPolicy = false;
     if (undefined !== policies && policies.length) {
       for (let j = 0; j < policies.length; j++) {
@@ -75,7 +90,30 @@ export default function RewriteModal({ onClose, candidates }) {
           </tbody>
         </table>
         <h3 className='spaceAbove spaceUnder' hidden={hiddenPolicy}>Compute the hybrid runtime based on the specified quality metrics:</h3>
-        <button type="button" className="btn btn-secondary" hidden={hiddenPolicy} onClick={() => onSubmit(i, undefined, true)}>Evaluate</button>
+        <button type="button" className="btn btn-secondary" hidden={hiddenPolicy} onClick={(e) => {evaluateRuntime=true; toggleTable(e); onSubmit(i, 'Will be evaluated', true);}}>Evaluate</button>
+        <table id="myTable" hidden>
+            <tbody>
+            <tr>
+            <th>Runtime</th>
+            <th>Availability</th>
+            <th>Custom Environment</th>
+            <th>Money</th>
+            <th>Privacy</th>
+          </tr>
+              <tr className="spaceUnder">
+                <td align="right">Qiskit Runtime</td>
+                <td align="left">
+                  <button type="button" className="btn btn-secondary" onClick={() => onSubmit(i, 'Qiskit Runtime', false)}>Rewrite Workflow</button>
+                </td>
+              </tr>
+              <tr className="spaceUnder">
+                <td align="right">AWS Runtime</td>
+                <td align="left">
+                  <button type="button" className="btn btn-secondary" onClick={() => onSubmit(i, 'AWS Runtime', false)}>Rewrite Workflow</button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
         <h3 className='spaceAbove spaceUnder' hidden={!hiddenPolicy}>The following hybrid runtimes might be used for improved execution:</h3>
         <table hidden={!hiddenPolicy}>
           <tbody>
@@ -138,18 +176,27 @@ export default function RewriteModal({ onClose, candidates }) {
     }
   }
 
-  const onSubmit = (i, runtimeName) => onClose({
+  const onSubmit = (i, runtimeName, policyEvaluation) => onClose({
     rewriteStarted: true,
     rewriteCandidateId: i,
     candidates: candidates,
     runtimeName : runtimeName,
-    candidatesRootRef: candidatesRootRef
+    candidatesRootRef: candidatesRootRef,
+    policyEvaluation: policyEvaluation
   });
 
   // reference to change the content depending on the selected tab
   let candidatesRootRef = React.createRef();
   let buttonsRootRef = React.createRef();
-
+  function toggleTable(event) {
+    var button = event.target;
+    var table = button.parentElement.querySelector("#myTable");
+    if (table.hasAttribute("hidden")) {
+      table.removeAttribute("hidden");
+    } else {
+      table.setAttribute("hidden", "");
+    }
+  }
   // method to enable tab functionality by hiding and displaying different div elements
   function openTab(id) {
     const buttons = buttonsRootRef.current.children;

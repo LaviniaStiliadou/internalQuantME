@@ -55,6 +55,14 @@ export default class QuantMEReplaceMenuProvider extends ReplaceMenuProvider {
       filteredOptions = filter(quantmeReplaceOptions.GROUP, isDifferentType(element));
       options = options.concat(super._createEntries(element, filteredOptions));
     }
+
+    // add additional elements to replace policies
+    if ((element.type.includes('quantme') && element.type.includes('Policy')) ) {
+      
+      // remove option to replace element by itself
+      filteredOptions = filter(quantmeReplaceOptions.POLICY, isDifferentType(element));
+      options = options.concat(super._createEntries(element, filteredOptions));
+    }
     return options;
   }
 }

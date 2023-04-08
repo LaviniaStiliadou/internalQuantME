@@ -102,7 +102,10 @@ export default class AdaptationPlugin extends PureComponent {
   }
 
   async handleRewriteClosed(result) {
-
+    if(result && result.hasOwnProperty('policyEvaluation')){
+      console.log(result.policyEvaluation);
+      return;
+    }else{
     // handle click on 'Rewrite Workflow' button
     if (result && result.hasOwnProperty('rewriteStarted') && result.rewriteStarted === true
       && result.hasOwnProperty('rewriteCandidateId')) {
@@ -213,10 +216,11 @@ export default class AdaptationPlugin extends PureComponent {
         }
         return;
       }
-    }
+    }}
 
     // close the modal if 'Cancel' button is pressed
     this.setState({ rewriteOpen: false });
+
   }
 
 

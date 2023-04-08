@@ -1370,3 +1370,950 @@ export function addRuntimeProvider(group, translate) {
     }
   }));
 }
+
+export function addAvailabilityPolicyEntries(group, translate, moddle, element, index){
+  group.entries.push(EntryFactory.textField({
+    id: 'avaiabilityWeight',
+    label: translate('Weight'),
+    modelProperty: 'availabilityWeight',
+
+    get: function(element, node) {
+      let bo = ModelUtil.getBusinessObject(element);
+      let weight = bo && bo.availabilityWeight;
+      return { availabilityWeight: weight };
+    },
+
+    set: function(element, values, node) {
+      let bo = ModelUtil.getBusinessObject(element);
+      let extensionElement = bo.extensionElements.values[index];
+      if (extensionElement != undefined){
+          extensionElement.weight = values.availabilityWeight;
+      }
+      let extensionElements = bo.extensionElements;
+      return CmdHelper.updateBusinessObject(element, bo, {
+        availabilityWeight: values.availabilityWeight|| undefined,
+        extensionElements
+      });
+    },
+
+    validate: function(element, values, node) {
+      return true;
+    },
+
+    hidden: function(element, node) {
+      let bo = ModelUtil.getBusinessObject(element);
+      if(bo.extensionElements){
+        let extensionElement = bo.extensionElements.values[index];
+        if(extensionElement != undefined){
+          return false;
+        }
+      }
+      return true;
+    }
+  }));
+  /**
+  group.entries.push(EntryFactory.textField({
+    id: 'devices',
+    label: translate('Devices'),
+    modelProperty: 'devices',
+
+    get: function(element, node) {
+      let bo = ModelUtil.getBusinessObject(element);
+      let weight = bo && bo.devices;
+      return { devices: weight };
+    },
+
+    set: function(element, values, node) {
+      let bo = ModelUtil.getBusinessObject(element);
+      let extensionElement = bo.extensionElements.values[index];
+      if (extensionElement != undefined){
+          extensionElement.devices = values.devices;
+      }
+      let extensionElements = bo.extensionElements;
+      return CmdHelper.updateBusinessObject(element, bo, {
+        devices: values.devices || undefined,
+        extensionElements
+      });
+    },
+
+    validate: function(element, values, node) {
+      return true;
+    },
+
+    hidden: function(element, node) {
+      let bo = ModelUtil.getBusinessObject(element);
+      if(bo.extensionElements){
+        let extensionElement = bo.extensionElements.values[index];
+        if(extensionElement != undefined){
+          return false;
+        }
+      }
+      return true;
+    }
+  }));
+   */
+  group.entries.push(EntryFactory.selectBox({
+    id: 'simulatorsAllowed',
+    label: translate('Simulators allowed?'),
+    selectOptions: [
+      { value:'yes',name:'Yes' } , { value:'no',name:'No' }
+    ],
+    modelProperty: 'simulatorsAllowed',
+
+    get: function(element, node) {
+      let bo = ModelUtil.getBusinessObject(element);
+      let runtimeProvider = bo && bo.simulatorsAllowed;
+      return { simulatorsAllowed: runtimeProvider };
+    },
+
+    set: function(element, values, node) {
+      let bo = ModelUtil.getBusinessObject(element);
+      let extensionElement = bo.extensionElements.values[index];
+      if (extensionElement != undefined){
+          extensionElement.weight = devices;
+      }
+      let extensionElements = bo.extensionElements;
+      return CmdHelper.updateBusinessObject(element, bo, {
+        devices: values.devices || undefined,
+        extensionElements});
+    },
+
+    validate: function(element, values, node) {
+      return true;
+    },
+
+    hidden: function(element, node) {
+      let bo = ModelUtil.getBusinessObject(element);
+      if(bo.extensionElements){
+        let extensionElement = bo.extensionElements.values[index];
+        if(extensionElement != undefined){
+          return false;
+        }
+      }
+      return true;
+    }
+  }));
+  
+}
+export function addMoneyPolicyEntries(group, translate, moddle, element, index) {
+  group.entries.push(EntryFactory.textField({
+    id: 'moneyWeight',
+    label: translate('Weight'),
+    modelProperty: 'moneyWeight',
+
+    get: function(element, node) {
+      let bo = ModelUtil.getBusinessObject(element);
+      let weight = bo && bo.moneyWeight;
+      return { moneyWeight: weight };
+    },
+
+    set: function(element, values, node) {
+      let bo = ModelUtil.getBusinessObject(element);
+      let extensionElement = bo.extensionElements.values[index];
+      if (extensionElement != undefined){
+          extensionElement.weight = values.moneyWeight;
+      }
+      let extensionElements = bo.extensionElements;
+      return CmdHelper.updateBusinessObject(element, bo, {
+        moneyWeight: values.moneyWeight|| undefined,
+        extensionElements
+      });
+    },
+
+    validate: function(element, values, node) {
+      return true;
+    },
+
+    hidden: function(element, node) {
+      let bo = ModelUtil.getBusinessObject(element);
+      if(bo.extensionElements){
+        let extensionElement = bo.extensionElements.values[index];
+        if(extensionElement != undefined){
+          return false;
+        }
+      }
+      return true;
+    }
+  }));
+  group.entries.push(EntryFactory.textField({
+    id: 'threshold',
+    label: translate('Threshold'),
+    modelProperty: 'threshold',
+
+    get: function(element, node) {
+      let bo = ModelUtil.getBusinessObject(element);
+      let weight = bo && bo.threshold;
+      return { threshold: weight };
+    },
+
+    set: function(element, values, node) {
+      let bo = ModelUtil.getBusinessObject(element);
+      let extensionElement = bo.extensionElements.values[index];
+      if (extensionElement != undefined){
+          extensionElement.threshold = values.threshold;
+      }
+      let extensionElements = bo.extensionElements;
+      return CmdHelper.updateBusinessObject(element, bo, {
+        threshold: values.threshold|| undefined,
+        extensionElements
+      });
+    },
+
+    validate: function(element, values, node) {
+      return true;
+    },
+
+    hidden: function(element, node) {
+      let bo = ModelUtil.getBusinessObject(element);
+      if(bo.extensionElements){
+        let extensionElement = bo.extensionElements.values[index];
+        if(extensionElement != undefined){
+          return false;
+        }
+      }
+      return true;
+    }
+  }));
+}
+
+export function addPrivacyPolicyEntries(group, translate, moddle, element, index){
+  group.entries.push(EntryFactory.textField({
+    id: 'privacyWeight',
+    label: translate('Weight'),
+    modelProperty: 'privacyWeight',
+
+    get: function(element, node) {
+      let bo = ModelUtil.getBusinessObject(element);
+      let weight = bo && bo.privacyWeight;
+      return { privacyWeight: weight };
+    },
+
+    set: function(element, values, node) {
+      let bo = ModelUtil.getBusinessObject(element);
+      let extensionElement = bo.extensionElements.values[index];
+      if (extensionElement != undefined){
+          extensionElement.weight = values.privacyWeight;
+      }
+      let extensionElements = bo.extensionElements;
+      return CmdHelper.updateBusinessObject(element, bo, {
+        privacyWeight: values.privacyWeight|| undefined,
+        extensionElements
+      });
+    },
+
+    validate: function(element, values, node) {
+      return true;
+    },
+
+    hidden: function(element, node) {
+      let bo = ModelUtil.getBusinessObject(element);
+      if(bo.extensionElements){
+        let extensionElement = bo.extensionElements.values[index];
+        if(extensionElement != undefined){
+          return false;
+        }
+      }
+      return true;
+    }
+  }));
+  group.entries.push(EntryFactory.textField({
+    id: 'dataRetention',
+    label: translate('Data Retention'),
+    modelProperty: 'dataRetention',
+
+    get: function(element, node) {
+      let bo = ModelUtil.getBusinessObject(element);
+      let weight = bo && bo.dataRetention;
+      return { dataRetention: weight };
+    },
+
+    set: function(element, values, node) {
+      let bo = ModelUtil.getBusinessObject(element);
+      let extensionElement = bo.extensionElements.values[index];
+      if (extensionElement != undefined){
+          extensionElement.dataRetention = values.dataRetention;
+      }
+      let extensionElements = bo.extensionElements;
+      return CmdHelper.updateBusinessObject(element, bo, {
+        dataRetention: values.dataRetention|| undefined,
+        extensionElements
+      });
+    },
+
+    validate: function(element, values, node) {
+      return true;
+    },
+
+    hidden: function(element, node) {
+      let bo = ModelUtil.getBusinessObject(element);
+      if(bo.extensionElements){
+        let extensionElement = bo.extensionElements.values[index];
+        if(extensionElement != undefined){
+          return false;
+        }
+      }
+      return true;
+    }
+  }));
+  group.entries.push(EntryFactory.textField({
+    id: 'thirdPartyQPU',
+    label: translate('Third-party QPU'),
+    modelProperty: 'thirdPartyQPU',
+
+    get: function(element, node) {
+      let bo = ModelUtil.getBusinessObject(element);
+      let weight = bo && bo.thirdPartyQPU;
+      return { thirdPartyQPU: weight };
+    },
+
+    set: function(element, values, node) {
+      let bo = ModelUtil.getBusinessObject(element);
+      let extensionElement = bo.extensionElements.values[index];
+      if (extensionElement != undefined){
+          extensionElement.thirdPartyQPU = values.thirdPartyQPU
+      }
+      let extensionElements = bo.extensionElements;
+      return CmdHelper.updateBusinessObject(element, bo, {
+        thirdPartyQPU: values.thirdPartyQPU|| undefined,
+        extensionElements
+      });
+    },
+
+    validate: function(element, values, node) {
+      return true;
+    },
+
+    hidden: function(element, node) {
+      let bo = ModelUtil.getBusinessObject(element);
+      if(bo.extensionElements){
+        let extensionElement = bo.extensionElements.values[index];
+        if(extensionElement != undefined){
+          return false;
+        }
+      }
+      return true;
+    }
+  }));
+
+}
+
+export function addCustomEnvironmentPolicyEntries(group, translate, moddle, element, index) {
+  group.entries.push(EntryFactory.textField({
+    id: 'customWeight',
+    label: translate('Weight'),
+    modelProperty: 'customWeight',
+
+    get: function(element, node) {
+      let bo = ModelUtil.getBusinessObject(element);
+      let weight = bo && bo.customWeight;
+      return { customWeight: weight };
+    },
+
+    set: function(element, values, node) {
+      let bo = ModelUtil.getBusinessObject(element);
+      let extensionElement = bo.extensionElements.values[index];
+      if (extensionElement != undefined){
+          extensionElement.customWeight = values.customWeight;
+      }
+      let extensionElements = bo.extensionElements;
+      return CmdHelper.updateBusinessObject(element, bo, {
+        customWeight: values.customWeight|| undefined,
+        extensionElements
+      });
+    },
+
+    validate: function(element, values, node) {
+      return true;
+    },
+
+    hidden: function(element, node) {
+      let bo = ModelUtil.getBusinessObject(element);
+      if(bo.extensionElements){
+        let extensionElement = bo.extensionElements.values[index];
+        if(extensionElement != undefined){
+          return false;
+        }
+      }
+      return true;
+    }
+  }));
+}
+
+export function addMoneyPolicyNoneEntries(group, translate, moddle, element){
+
+  group.entries.push(EntryFactory.textField({
+    id: 'weight',
+    label: translate('Weight'),
+    modelProperty: 'weight',
+
+    get: function(element, node) {
+      let bo = ModelUtil.getBusinessObject(element);
+      let weight = bo && bo.weight;
+      return { weight: weight };
+    },
+
+    set: function(element, values, node) {
+      let bo = ModelUtil.getBusinessObject(element);
+      let extensionElements = bo.extensionElements;
+      return CmdHelper.updateBusinessObject(element, bo, {
+        weight: values.weight|| undefined
+      });
+    },
+
+    validate: function(element, values, node) {
+      return true;
+    },
+
+    hidden: function(element, node) {
+      return false;
+    }
+  }));
+  group.entries.push(EntryFactory.textField({
+    id: 'threshold',
+    label: translate('Threshold'),
+    modelProperty: 'threshold',
+
+    get: function(element, node) {
+      let bo = ModelUtil.getBusinessObject(element);
+      let weight = bo && bo.threshold;
+      return { threshold: weight };
+    },
+
+    set: function(element, values, node) {
+      let bo = ModelUtil.getBusinessObject(element);
+      let extensionElements = bo.extensionElements;
+      return CmdHelper.updateBusinessObject(element, bo, {
+        threshold: values.threshold|| undefined
+      });
+    },
+
+    validate: function(element, values, node) {
+      return true;
+    },
+
+    hidden: function(element, node) {
+      return false;
+    }
+  }));
+}
+
+export function addAvailabilityPolicyNoneEntries(group, translate, moddle, element){
+  group.entries.push(EntryFactory.textField({
+    id: 'weight',
+    label: translate('Weight'),
+    modelProperty: 'weight',
+
+    get: function(element, node) {
+      let bo = ModelUtil.getBusinessObject(element);
+      let weight = bo && bo.weight;
+      return { weight: weight };
+    },
+
+    set: function(element, values, node) {
+      let bo = ModelUtil.getBusinessObject(element);
+      let extensionElements = bo.extensionElements;
+      return CmdHelper.updateBusinessObject(element, bo, {
+        weight: values.weight|| undefined
+      });
+    },
+
+    validate: function(element, values, node) {
+      return true;
+    },
+
+    hidden: function(element, node) {
+      return false;
+    }
+  }));
+
+  group.entries.push(EntryFactory.selectBox({
+    id: 'simulatorsAllowed',
+    label: translate('Simulators allowed'),
+    selectOptions: [
+      { value:'yes',name:'Yes' }, { value:'no',name:'No' }
+    ],
+    modelProperty: 'simulatorsAllowed',
+
+    get: function(element, node) {
+      let bo = ModelUtil.getBusinessObject(element);
+      let cuttingMethod = bo && bo.simulatorsAllowed;
+      return { simulatorsAllowed: cuttingMethod };
+    },
+
+    set: function(element, values, node) {
+      let bo = ModelUtil.getBusinessObject(element);
+      return CmdHelper.updateBusinessObject(element, bo, {
+        simulatorsAllowed: values.simulatorsAllowed || undefined
+      });
+    },
+
+    validate: function(element, values, node) {
+      return true;
+    },
+
+    hidden: function(element, node) {
+      return false;
+    }
+  }));
+}
+
+export function addPrivacyPolicyNoneEntries(group, translate, moddle, element){
+
+  group.entries.push(EntryFactory.textField({
+    id: 'weight',
+    label: translate('Weight'),
+    modelProperty: 'weight',
+
+    get: function(element, node) {
+      let bo = ModelUtil.getBusinessObject(element);
+      let weight = bo && bo.weight;
+      return { weight: weight };
+    },
+
+    set: function(element, values, node) {
+      let bo = ModelUtil.getBusinessObject(element);
+      return CmdHelper.updateBusinessObject(element, bo, {
+        weight: values.weight|| undefined
+      });
+    },
+
+    validate: function(element, values, node) {
+      return true;
+    },
+
+    hidden: function(element, node) {
+      return false;
+    }
+  }));
+  group.entries.push(EntryFactory.textField({
+    id: 'dataRetention',
+    label: translate('Data Retention'),
+    modelProperty: 'dataRetention',
+
+    get: function(element, node) {
+      let bo = ModelUtil.getBusinessObject(element);
+      let weight = bo && bo.dataRetention;
+      return { dataRetention: weight };
+    },
+
+    set: function(element, values, node) {
+      let bo = ModelUtil.getBusinessObject(element);
+      return CmdHelper.updateBusinessObject(element, bo, {
+        dataRetention: values.dataRetention|| undefined
+      });
+    },
+
+    validate: function(element, values, node) {
+      return true;
+    },
+
+    hidden: function(element, node) {
+      return false;
+    }
+  }));
+  group.entries.push(EntryFactory.textField({
+    id: 'thirdPartyQPU',
+    label: translate('Third-party QPU'),
+    modelProperty: 'thirdPartyQPU',
+
+    get: function(element, node) {
+      let bo = ModelUtil.getBusinessObject(element);
+      let weight = bo && bo.thirdPartyQPU;
+      return { thirdPartyQPU: weight };
+    },
+
+    set: function(element, values, node) {
+      let bo = ModelUtil.getBusinessObject(element);
+      let extensionElements = bo.extensionElements;
+      return CmdHelper.updateBusinessObject(element, bo, {
+        thirdPartyQPU: values.thirdPartyQPU|| undefined
+      });
+    },
+
+    validate: function(element, values, node) {
+      return true;
+    },
+
+    hidden: function(element, node) {
+      return false;
+    }
+  }));
+  group.entries.push(EntryFactory.textField({
+    id: 'marketingCommunication',
+    label: translate('Marketing Communication'),
+    modelProperty: 'marketingCommunication',
+
+    get: function(element, node) {
+      let bo = ModelUtil.getBusinessObject(element);
+      let weight = bo && bo.marketingCommunication;
+      return { marketingCommunication: weight };
+    },
+
+    set: function(element, values, node) {
+      let bo = ModelUtil.getBusinessObject(element);
+      let extensionElements = bo.extensionElements;
+      return CmdHelper.updateBusinessObject(element, bo, {
+        marketingCommunication: values.marketingCommunication|| undefined
+      });
+    },
+
+    validate: function(element, values, node) {
+      return true;
+    },
+
+    hidden: function(element, node) {
+      return false;
+    }
+  }));
+}
+
+export function addPolicyEntries(group, translate, moddle, element) {
+  var remainingPolicies = consts.AVAILABLE_POLICIES;
+  var remainingPoliciesOptions = [];
+  for (let i = 0; i < remainingPolicies.length; i++) {
+    remainingPoliciesOptions.push({ value:remainingPolicies[i],name:remainingPolicies[i] });
+  }
+  let bo2 = ModelUtil.getBusinessObject(element);
+  let extensionElements2 = bo2.extensionElements
+
+  group.entries.push(EntryFactory.selectBox({
+    id: 'policyOne',
+    label: translate('First Policy'),
+    selectOptions:remainingPoliciesOptions,
+    modelProperty: 'policyOne',
+    get: function(element, node) {
+      let bo = ModelUtil.getBusinessObject(element);
+      let policyOne = bo && bo.policyOne;
+      return { policyOne: policyOne };
+    },
+
+    set: function(element, values, node) {
+      let bo = ModelUtil.getBusinessObject(element);
+      const extensionElements = moddle.create("bpmn:ExtensionElements");
+      console.log(values.policyOne);
+
+      // create the custom element (according to our json config)
+      const policyType = moddle.create("quantme:PolicyType");
+      //extensionElements.get("values").push(policyType);
+      if (values.policyOne === 'quantme:MoneyPolicy'){
+        const moneyPolicy = moddle.create("quantme:MoneyPolicyType");
+        moneyPolicy.weight = 0;
+        moneyPolicy.threshold = 0;
+        extensionElements.get("values").push(moneyPolicy);
+      }
+      if (values.policyOne === 'quantme:AvailabilityPolicy'){
+        const availabilityPolicy = moddle.create("quantme:AvailabilityPolicyType");
+        availabilityPolicy.weight = 0;
+        availabilityPolicy.devices ;
+        availabilityPolicy.simulatorsAllowed= true;
+        extensionElements.get("values").push(availabilityPolicy);
+      }
+      if (values.policyOne === 'quantme:PrivacyPolicy'){
+        const privacyPolicy = moddle.create("quantme:PrivacyPolicyType");
+        privacyPolicy.weight = 0;
+        privacyPolicy.dataRetention = false;
+        privacyPolicy.marketingCommunication = "opt-out";
+        privacyPolicy.thirdPartyQPU = false;
+        extensionElements.get("values").push(privacyPolicy);
+        //policyType.privacyPolicy = privacyPolicy;
+
+      }
+      if (values.policyOne === 'quantme:CustomEnvironmentPolicy'){
+        const customEnvironmentPolicy = moddle.create("quantme:CustomEnvironmentPolicyType");
+        customEnvironmentPolicy.weight = 0;
+        extensionElements.get("values").push(customEnvironmentPolicy);
+        //policyType.customEnvironmentPolicy = customEnvironmentPolicy;
+      }
+      
+      policyType.name = values.policyOne;
+      console.log(policyType);
+
+      // put the custom element into the extensionElements
+      
+      return CmdHelper.updateBusinessObject(element, bo, {
+        policyOne: values.policyOne || undefined,
+        extensionElements
+      });
+    },
+
+    validate: function(element, values, node) {
+      return true;
+    },
+
+    hidden: function(element, node) {
+      console.log(element);
+      return false;
+    }
+  }));
+  /** 
+  group.entries.push(EntryFactory.textField({
+    id: 'weight',
+    label: translate('Weight'),
+    modelProperty: 'weight',
+
+    get: function(element, node) {
+      let bo = ModelUtil.getBusinessObject(element);
+      let weight = bo && bo.weight;
+      return { weight: weight };
+    },
+
+    set: function(element, values, node) {
+      let bo = ModelUtil.getBusinessObject(element);
+      let extensionElement = bo.extensionElements.values[0];
+      if (extensionElement != undefined){
+          extensionElement.weight = values.weight;
+      }
+      let extensionElements = bo.extensionElements;
+      return CmdHelper.updateBusinessObject(element, bo, {
+        weight: values.weight|| undefined,
+        extensionElements
+      });
+    },
+
+    validate: function(element, values, node) {
+      return true;
+    },
+
+    hidden: function(element, node) {
+      let bo = ModelUtil.getBusinessObject(element);
+      if(bo.extensionElements){
+        let extensionElement = bo.extensionElements.values[0];
+        if(extensionElement != undefined){
+          return false;
+        }
+      }
+      return true;
+    }
+  }));
+  */
+  if (extensionElements2 != undefined){
+    if(extensionElements2.values[0] != undefined){
+      if(extensionElements2.values[0].$type  === "quantme:AvailabilityPolicyType" ){
+        addAvailabilityPolicyEntries(group, translate, moddle, element, 0);
+    }
+      if(extensionElements2.values[0].$type  === "quantme:CustomEnvironmentPolicyType" ){
+        addCustomEnvironmentPolicyEntries(group, translate, moddle, element, 0);
+    }
+    if(extensionElements2.values[0].$type  === "quantme:MoneyPolicyType" ){
+      addMoneyPolicyEntries(group, translate, moddle, element, 0);
+    } 
+    if(extensionElements2.values[0].$type  === "quantme:PrivacyPolicyType" ){
+      addPrivacyPolicyEntries(group, translate, moddle, element, 0);
+    } 
+  }
+    group.entries.push(EntryFactory.selectBox({
+      id: 'policyTwo',
+      label: translate('Second Policy'),
+      selectOptions:remainingPoliciesOptions,
+      modelProperty: 'policyTwo',
+      get: function(element, node) {
+        let bo = ModelUtil.getBusinessObject(element);
+        let policyTwo = bo && bo.policyTwo;
+        return { policyTwo: policyTwo };
+      },
+  
+      set: function(element, values, node) {
+        let bo = ModelUtil.getBusinessObject(element);
+        const extensionElements = ModelUtil.getBusinessObject(element).extensionElements;
+        console.log(values.policyTwo);
+  
+        // create the custom element (according to our json config)
+        const policyType = moddle.create("quantme:PolicyType");
+        //extensionElements.get("values").push(policyType);
+        if(values.policyTwo !== element.businessObject.policyOne){
+          if (values.policyTwo === 'quantme:MoneyPolicy'){
+            const moneyPolicy = moddle.create("quantme:MoneyPolicyType");
+            moneyPolicy.weight = 0;
+            moneyPolicy.threshold = 0;
+            extensionElements.get("values").push(moneyPolicy);
+          }
+          if (values.policyTwo === 'quantme:AvailabilityPolicy'){
+            const availabilityPolicy = moddle.create("quantme:AvailabilityPolicyType");
+            availabilityPolicy.weight = 0;
+            availabilityPolicy.devices ;
+            availabilityPolicy.simulatorsAllowed= true;
+            extensionElements.get("values").push(availabilityPolicy);
+          }
+          if (values.policyTwo === 'quantme:PrivacyPolicy'){
+            const privacyPolicy = moddle.create("quantme:PrivacyPolicyType");
+            privacyPolicy.weight = 0;
+            privacyPolicy.dataRetention = false;
+            privacyPolicy.marketingCommunication = "opt-out";
+            privacyPolicy.thirdPartyQPU = false;
+            extensionElements.get("values").push(privacyPolicy);
+            //policyType.privacyPolicy = privacyPolicy;
+    
+          }
+          if (values.policyTwo === 'quantme:CustomEnvironmentPolicy'){
+            const customEnvironmentPolicy = moddle.create("quantme:CustomEnvironmentPolicyType");
+            customEnvironmentPolicy.weight = 0;
+            extensionElements.get("values").push(customEnvironmentPolicy);
+            //policyType.customEnvironmentPolicy = customEnvironmentPolicy;
+          }
+          policyType.name = values.policyTwo;
+          console.log(policyType);
+
+      }
+      
+        // put the custom element into the extensionElements
+        
+        return CmdHelper.updateBusinessObject(element, bo, {
+          policyTwo: values.policyTwo || undefined,
+          extensionElements
+        });
+      },
+  
+      validate: function(element, values, node) {
+        var errorMessage = {};
+        if(element.businessObject.policyTwo !== undefined){
+        if(element.businessObject.policyOne !== element.businessObject.policyTwo){
+          return true;
+        }else{
+          errorMessage.policyTwo = "Please select for each policy a different type."
+          return errorMessage;
+        }}
+        //if(element.businessObject.extensionElements != undefined){
+          //if(element.businessObject.extensionElements.values.length > 1){
+           // console.log(element.businessObject.extensionElements.values[0].$type);
+            //console.log(element.businessObject.extensionElements.values[0].$type)
+            //if(element.businessObject.extensionElements.values[0].$type !== element.businessObject.extensionElements.values[1].$type){
+             // return true;
+            //}else{
+             // errorMessage.policyTwo = "Please select for each policy a different type."
+              //return errorMessage;
+            //}
+          //}
+        //}
+      },
+  
+      hidden: function(element, node) {
+        if(element.businessObject.extensionElements != undefined){
+          if(element.businessObject.extensionElements.values[0] != undefined){
+            return false
+          }
+        }
+        return true;
+      }
+    }));
+    if(extensionElements2.values[1] != undefined){
+      if(extensionElements2.values[1].$type  === "quantme:AvailabilityPolicyType" ){
+        addAvailabilityPolicyEntries(group, translate, moddle, element, 1);
+    }
+      if(extensionElements2.values[1].$type  === "quantme:CustomEnvironmentPolicyType" ){
+        addCustomEnvironmentPolicyEntries(group, translate, moddle, element, 1);
+    }
+    if(extensionElements2.values[1].$type  === "quantme:MoneyPolicyType" ){
+      addMoneyPolicyEntries(group, translate, moddle, element, 1);
+    } 
+    if(extensionElements2.values[1].$type  === "quantme:PrivacyPolicyType" ){
+      addPrivacyPolicyEntries(group, translate, moddle, element, 1);
+    } }
+    group.entries.push(EntryFactory.selectBox({
+      id: 'policyThree',
+      label: translate('Third Policy'),
+      selectOptions:remainingPoliciesOptions,
+      modelProperty: 'policyThree',
+      get: function(element, node) {
+        let bo = ModelUtil.getBusinessObject(element);
+        let policyThree = bo && bo.policyThree;
+        return { policyThree: policyThree };
+      },
+  
+      set: function(element, values, node) {
+        let bo = ModelUtil.getBusinessObject(element);
+        const extensionElements = ModelUtil.getBusinessObject(element).extensionElements;
+        //console.log(values.policyTwo);
+  
+        // create the custom element (according to our json config)
+        const policyType = moddle.create("quantme:PolicyType");
+        //extensionElements.get("values").push(policyType);
+        if(values.policyThree !== element.businessObject.policyTwo && element.businessObject.policyOne !== values.policyThree){
+          if (values.policyThree === 'quantme:MoneyPolicy'){
+            const moneyPolicy = moddle.create("quantme:MoneyPolicyType");
+            moneyPolicy.weight = 0;
+            moneyPolicy.threshold = 0;
+            extensionElements.get("values").push(moneyPolicy);
+          }
+          if (values.policyThree === 'quantme:AvailabilityPolicy'){
+            const availabilityPolicy = moddle.create("quantme:AvailabilityPolicyType");
+            availabilityPolicy.weight = 0;
+            availabilityPolicy.devices ;
+            availabilityPolicy.simulatorsAllowed= true;
+            extensionElements.get("values").push(availabilityPolicy);
+          }
+          if (values.policyThree === 'quantme:PrivacyPolicy'){
+            const privacyPolicy = moddle.create("quantme:PrivacyPolicyType");
+            privacyPolicy.weight = 0;
+            privacyPolicy.dataRetention = false;
+            privacyPolicy.marketingCommunication = "opt-out";
+            privacyPolicy.thirdPartyQPU = false;
+            extensionElements.get("values").push(privacyPolicy);
+            //policyType.privacyPolicy = privacyPolicy;
+    
+          }
+          if (values.policyThree === 'quantme:CustomEnvironmentPolicy'){
+            const customEnvironmentPolicy = moddle.create("quantme:CustomEnvironmentPolicyType");
+            customEnvironmentPolicy.weight = 0;
+            extensionElements.get("values").push(customEnvironmentPolicy);
+            //policyType.customEnvironmentPolicy = customEnvironmentPolicy;
+          }
+          policyType.name = values.policyThree;
+          console.log(policyType);
+
+      }
+      
+        // put the custom element into the extensionElements
+        
+        return CmdHelper.updateBusinessObject(element, bo, {
+          policyThree: values.policyThree || undefined,
+          extensionElements
+        });
+      },
+  
+      validate: function(element, values, node) {
+        var errorMessage = {};
+        if (element.businessObject.policyThree !== undefined) {
+        if(element.businessObject.policyOne !== element.businessObject.policyThree && element.businessObject.policyTwo !== element.businessObject.policyThree ){
+          return true;
+        }else{
+          errorMessage.policyTwo = "Please select for each policy a different type."
+          return errorMessage;
+        }}
+        //if(element.businessObject.extensionElements != undefined){
+          //if(element.businessObject.extensionElements.values.length > 1){
+           // console.log(element.businessObject.extensionElements.values[0].$type);
+            //console.log(element.businessObject.extensionElements.values[0].$type)
+            //if(element.businessObject.extensionElements.values[0].$type !== element.businessObject.extensionElements.values[1].$type){
+             // return true;
+            //}else{
+             // errorMessage.policyTwo = "Please select for each policy a different type."
+              //return errorMessage;
+            //}
+          //}
+        //}
+      },
+  
+      hidden: function(element, node) {
+        if(element.businessObject.extensionElements != undefined){
+          if(element.businessObject.extensionElements.values[1] != undefined){
+            return false
+          }
+        }
+        return true;
+      }
+    }));
+    if(extensionElements2.values[2] != undefined){
+      if(extensionElements2.values[2].$type  === "quantme:AvailabilityPolicyType" ){
+        addAvailabilityPolicyEntries(group, translate, moddle, element, 2);
+    }
+      if(extensionElements2.values[2].$type  === "quantme:CustomEnvironmentPolicyType" ){
+        addCustomEnvironmentPolicyEntries(group, translate, moddle, element, 2);
+    }
+    if(extensionElements2.values[2].$type  === "quantme:MoneyPolicyType" ){
+      addMoneyPolicyEntries(group, translate, moddle, element, 2);
+    } 
+    if(extensionElements2.values[2].$type  === "quantme:PrivacyPolicyType" ){
+      addPrivacyPolicyEntries(group, translate, moddle, element, 2);
+    } }
+}
+}

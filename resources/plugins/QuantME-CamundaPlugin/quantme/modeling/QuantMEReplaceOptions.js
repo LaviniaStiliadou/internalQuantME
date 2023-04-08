@@ -140,3 +140,47 @@ export var GROUP = [
     }
   }
 ];
+
+export var POLICY = [
+  {
+    label: 'Policy',
+    actionName: 'replace-with-policy',
+    className: 'bpmn-icon-scroll',
+    target: {
+      type: consts.POLICY
+    }
+  },
+  {
+    label: 'Availability Policy',
+    actionName: 'replace-with-availability-policy',
+    className: 'bpmn-icon-availabilityfont',
+    target: {
+      type: consts.AVAILABILITY_POLICY
+    }
+  },
+  {
+    label: 'Custom Environment Policy',
+    actionName: 'replace-with-custom-environment-policy',
+    className: 'bpmn-icon-custom-environment',
+    target: {
+      type: consts.CUSTOM_ENVIRONMENT_POLICY
+    }
+  },
+  {
+    label: 'Money Policy',
+    actionName: 'replace-with-money-policy',
+    className: 'bpmn-icon-money',
+    target: {
+      type: consts.MONEY_POLICY
+    }
+  },
+  {
+    label: 'Privacy Policy',
+    actionName: 'replace-with-privacy-policy',
+    className: 'bpmn-icon-privacy',
+    target: {
+      type: consts.PRIVACY_POLICY
+    }
+  }
+];
+

@@ -24,6 +24,10 @@ export const QUANTUM_HARDWARE_SELECTION_SUBPROCESS = 'quantme:QuantumHardwareSel
 export const HYBRID_RUNTIME_GROUP = 'quantme:HybridRuntimeGroup';
 export const CIRCUIT_CUTTING_SUBPROCESS = 'quantme:CircuitCuttingSubprocess';
 export const POLICY = 'quantme:Policy';
+export const MONEY_POLICY = 'quantme:MoneyPolicy';
+export const PRIVACY_POLICY = 'quantme:PrivacyPolicy';
+export const AVAILABILITY_POLICY = 'quantme:AvailabilityPolicy';
+export const CUSTOM_ENVIRONMENT_POLICY = 'quantme:CustomEnvironmentPolicy';
 
 // Property names of the QuantME constructs
 export const ALGORITHM = 'algorithm';
@@ -73,6 +77,11 @@ export const NISQ_ANALYZER_QPU_SELECTION_PATH = 'qpu-selection';
 // supported selection strategies
 export const SELECTION_STRATEGY_SHORTEST_QUEUE_SIZE = 'Shortest-Queue';
 export const SELECTION_STRATEGY_LIST = [SELECTION_STRATEGY_SHORTEST_QUEUE_SIZE];
+
+// policy properties
+export const AVAILABLE_POLICIES = [MONEY_POLICY, AVAILABILITY_POLICY, CUSTOM_ENVIRONMENT_POLICY, PRIVACY_POLICY];
+export const WEIGHT = 'weight';
+
 
 // list of QuantME attributes to check if a given attribute belongs to the extension or not
 export const QUANTME_ATTRIBUTES = [
