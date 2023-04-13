@@ -71,7 +71,7 @@ export async function findOptimizationCandidates(modeler) {
   // draw hybrid runtime groups
   for (let candidate of optimizationCandidates) {
     candidate = await visualizeCandidateGroup(candidate, modeler);
-    generateCandidateGroup(candidate.groupBox, modeler, groups);
+    generateCandidateGroup(candidate.groupBox, modeler, groups, candidate);
   }
 
   // return all valid optimization candidates for the analysis and rewrite modal
@@ -104,20 +104,20 @@ function deleteVariationalSpheres(group, modeler) {
  * @param groupBox
  * @param modeler
  */
-async function generateCandidateGroup(groupBox, modeler, groups) {
+async function generateCandidateGroup(groupBox, modeler, groups, candidate) {
   let definitions = modeler.getDefinitions();
   let rootElement = getRootProcess(definitions);
   const elementRegistry = modeler.get('elementRegistry');
   let rootElementBo = elementRegistry.get(rootElement.id);
   let modeling = modeler.get('modeling');
-  let existingIdenticalGroup = compareWithExistingGroups(groupBox.x, groups, modeler);
+  let existingIdenticalGroup = compareWithExistingGroups(groupBox.x, groups, modeler, candidate);
   if (!existingIdenticalGroup) {
-    return modeling.createShape({ type: 'quantme:HybridRuntimeGroup' }, { x: groupBox.x, y: groupBox.y, width: groupBox.width, height: groupBox.height }, rootElementBo, {});
+    return modeling.createShape({ type: 'quantme:HybridRuntimeGroup' }, { x: groupBox.x, y: groupBox.y, width: groupBox.width, height: groupBox.height, candidate: candidate }, rootElementBo, {});
   }
   }
   
 
-function compareWithExistingGroups(x, groups, modeler){
+function compareWithExistingGroups(x, groups, modeler, candidate){
   for(let group of groups){
     const elementRegistry = modeler.get('elementRegistry');
     console.log(elementRegistry);
@@ -129,6 +129,7 @@ function compareWithExistingGroups(x, groups, modeler){
     console.log(element);
     if(element != undefined){
     if(group.di.bounds.x == x && element.attachers.length >0){
+      group.candidate = candidate;
       return true;
     }}
   }

@@ -214,7 +214,17 @@ export default class QuantMEController extends PureComponent {
     });
     let xml = await this.modeler.get('bpmnjs').saveXML();
     let currentQRMs = await this.quantME.getQRMs();
-    let result = await startReplacementProcess(xml.xml, currentQRMs,
+    const definitions = this.modeler.getDefinitions();
+    const rootElement = getRootProcess(definitions);
+    console.log(rootElement);
+    let elementRegistry = this.modeler.get('elementRegistry');
+    let groups = [];
+    for (let i = 0; i < rootElement.artifacts.length; i++) {
+      let group = elementRegistry.get(rootElement.artifacts[i].id)
+      console.log(group);
+      groups.push(group);
+    }
+    let result = await startReplacementProcess(xml.xml, currentQRMs, groups,
       {
         nisqAnalyzerEndpoint: this.modeler.config.nisqAnalyzerEndpoint,
         transformationFrameworkEndpoint: this.modeler.config.transformationFrameworkEndpoint,

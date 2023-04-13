@@ -23,6 +23,7 @@ import { getDefinitionsFromXml, createModelerFromXml } from '../Utilities';
 import { addQuantMEInputParameters } from 'client/src/app/quantme/replacement/InputOutputHandler';
 import * as Constants from 'client/src/app/quantme/Constants';
 import { replaceHardwareSelectionSubprocess } from './hardware-selection/QuantMEHardwareSelectionHandler';
+import { replaceHardwareSelectionSubprocess2 } from './hybrid-runtime-detection/QuantMEHardwareSelectionHandler'
 import { getQiskitRuntimeProgramDeploymentModel } from '../../adaptation/runtimes/QiskitRuntimeHandler';
 import { getAWSRuntimeProgramDeploymentModel } from '../../adaptation/runtimes/AwsRuntimeHandler';
 import { replaceCuttingSubprocess } from './circuit-cutting/QuantMECuttingHandler';
@@ -36,7 +37,7 @@ import { CIRCUIT_CUTTING_SUBPROCESS } from 'client/src/app/quantme/Constants';
  * @param endpointConfig endpoints of the services required for the dynamic hardware selection
  * @param candidate runtime candidate to update if available (might be undefined)
  */
-export async function startReplacementProcess(xml, currentQRMs, endpointConfig, candidate) {
+export async function startReplacementProcess(xml, currentQRMs, groups, endpointConfig, candidate) {
   let modeler = await createModelerFromXml(xml);
   let modeling = modeler.get('modeling');
   let elementRegistry = modeler.get('elementRegistry');
@@ -60,6 +61,9 @@ export async function startReplacementProcess(xml, currentQRMs, endpointConfig, 
   const hybridRuntimeGroups = getHybridRuntimeGroups(rootElement, elementRegistry);
 
   for (let hybridRuntimeGroup of hybridRuntimeGroups) {
+    console.log("hybrid");
+    console.log(hybridRuntimeGroup)
+    let replacedTask =[]
     let groupModeler = await createModelerFromXml(xml);
     groupModeler.config = endpointConfig;
     let groupModeling = groupModeler.get('modeling');
@@ -67,8 +71,12 @@ export async function startReplacementProcess(xml, currentQRMs, endpointConfig, 
     const groupDefinitions = groupModeler.getDefinitions();
     const groupRootElement = getRootProcess(groupDefinitions);
     console.log('The xml before the element replacement: ', xml);
-
     let groupElement = groupElementRegistry.get(hybridRuntimeGroup.group.id);
+    console.log("Grup");
+    console.log(groupElement);
+    let otherPolicy = false;
+    let elementRegistry = modeler.get('elementRegistry');
+    
     let groupX, groupY, groupWidth, groupHeight;
     groupX= groupElement.x;
     groupY = groupElement.y;
@@ -219,6 +227,15 @@ export async function startReplacementProcess(xml, currentQRMs, endpointConfig, 
       continue;
     }
 
+    if(replacementConstruct.task.$type === Constants.HYBRID_RUNTIME_GROUP){
+      console.log('Hybrid runtime group needs no QRM. Skipping search...');
+      continue;
+    }
+    if(replacementConstruct.task.$type === Constants.POLICY){
+      console.log('Policies needs no QRM. Skipping search...');
+      continue;
+    }
+
     // abort transformation if at least one task can not be replaced
     replacementConstruct.qrm = await getMatchingQRM(replacementConstruct.task, currentQRMs);
     if (!replacementConstruct.qrm) {
@@ -228,6 +245,22 @@ export async function startReplacementProcess(xml, currentQRMs, endpointConfig, 
         cause: 'Unable to replace task with id \'' + replacementConstruct.task.id + '\' by suited QRM!'
       };
     }
+  }
+
+  for(let replacementConstruct of replacementConstructs){
+    let replacementSuccess = false;
+    if (replacementConstruct.task.$type === Constants.POLICY) {
+      replacementSuccess = await replaceHardwareSelectionSubprocess2(replacementConstruct.task, replacementConstruct.parent, modeler, endpointConfig.nisqAnalyzerEndpoint, endpointConfig.transformationFrameworkEndpoint, endpointConfig.camundaEndpoint, groups);
+      console.log('Successfully replaced Cutting Subprocess');
+      if (!replacementSuccess) {
+        console.log('Replacement of QuantME modeling construct with Id ' + replacementConstruct.task.id + ' failed. Aborting process!');
+        return {
+          status: 'failed',
+          cause: 'Replacement of QuantME modeling construct with Id ' + replacementConstruct.task.id + ' failed. Aborting process!'
+        };
+      }
+    }
+
   }
 
   // first replace cutting subprocesses and insert tasks
@@ -256,16 +289,21 @@ export async function startReplacementProcess(xml, currentQRMs, endpointConfig, 
       replacementSuccess = await replaceHardwareSelectionSubprocess(replacementConstruct.task, replacementConstruct.parent, modeler, endpointConfig.nisqAnalyzerEndpoint, endpointConfig.transformationFrameworkEndpoint, endpointConfig.camundaEndpoint);
     } else {
       console.log('Replacing task with id %s by using QRM: ', replacementConstruct.task.id, replacementConstruct.qrm);
-      replacementSuccess = await replaceByFragment(definitions, replacementConstruct.task, replacementConstruct.parent, replacementConstruct.qrm.replacement, modeler);
+      if(replacementConstruct.task.$type === Constants.QUANTUM_CIRCUIT_EXECUTION_TASK ){
+        console.log(replacementConstruct.task);
+        console.log(replacementConstruct.qrm.replacement);
+        
+        replacementSuccess = await replaceByFragment(definitions, replacementConstruct.task, replacementConstruct.parent, replacementConstruct.qrm.replacement, modeler);
+      }
     }
 
-    if (!replacementSuccess) {
-      console.log('Replacement of QuantME modeling construct with Id ' + replacementConstruct.task.id + ' failed. Aborting process!');
-      return {
-        status: 'failed',
-        cause: 'Replacement of QuantME modeling construct with Id ' + replacementConstruct.task.id + ' failed. Aborting process!'
-      };
-    }
+    //if (!replacementSuccess) {
+     // console.log('Replacement of QuantME modeling construct with Id ' + replacementConstruct.task.id + ' failed. Aborting process!');
+      //return {
+       // status: 'failed',
+        //cause: 'Replacement of QuantME modeling construct with Id ' + replacementConstruct.task.id + ' failed. Aborting process!'
+      //};
+    //}
   }
 
   // layout diagram after successful transformation

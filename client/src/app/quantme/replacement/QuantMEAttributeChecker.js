@@ -54,6 +54,12 @@ export function requiredAttributesAvailable(element) {
     return checkVariationalQuantumAlgorithmTask(bo);
   case consts.CIRCUIT_CUTTING_SUBPROCESS:
     return checkCircuitCuttingSubprocess(bo);
+  case consts.POLICY:
+  case consts.MONEY_POLICY:
+  case consts.CUSTOM_ENVIRONMENT_POLICY:
+  case consts.AVAILABILITY_POLICY:
+  case consts.PRIVACY_POLICY:
+    return true;
   default:
     console.log('Unsupported QuantME element of type: ', element.$type);
     return false;

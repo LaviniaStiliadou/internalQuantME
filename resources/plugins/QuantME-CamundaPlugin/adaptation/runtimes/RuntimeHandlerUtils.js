@@ -203,6 +203,82 @@ export async function getRequiredPrograms(rootElement, wineryEndpoint) {
   return { programs: await requiredProgramsZip.generateAsync({ type: 'blob' }) };
 }
 
+
+/**
+ * Retrieve the programs of all script/service tasks defined within the given root element
+ *
+ * @param rootElement the root element to retrieve all related programs
+ * @param wineryEndpoint the endpoint of a Winery to load the required deployment models from
+ * @return the list of all retrieved files or an error message if the retrieval fails
+ */
+export async function getRequiredProgramsGroup(rootElement, wineryEndpoint, group) {
+  let requiredProgramsZip = new JSZip();
+  for (let i = 0; i < rootElement.flowElements.length; i++) {
+    let element = rootElement.flowElements[i];
+    if (element.$type === 'bpmn:ServiceTask') {
+      console.log(element);
+      if(group.x <= element.di.bounds.x && element.di.bounds.x <= group.x + group.width ){
+
+    // service task needs attached deployment model that is accessible through the defined URL
+      if (element.deploymentModelUrl === undefined) {
+        console.log('No deployment model defined for ServiceTask: ', element.id);
+        return { error: 'No deployment model defined for ServiceTask: ' + element.id };
+      }
+
+      // replace generic placeholder by endpoint of connected Winery
+      let url = element.deploymentModelUrl.replace('{{ wineryEndpoint }}', wineryEndpoint);
+
+      // download the deployment model from the given URL
+      console.log('Retrieving deployment model from URL: ', url);
+      const response = await fetch(url);
+      const blob = await response.blob();
+
+      // unzip the retrieved CSAR
+      let zip = await (new JSZip()).loadAsync(blob);
+
+      // get all contained deployment artifacts
+      let files = getDeploymentArtifactFiles(zip);
+
+      // only one deployment artifact is allowed containing the quantum and classical programs
+      if (files.length !== 1) {
+        console.log('Unable to retrieve required deployment artifact for ServiceTemplate with URL: ', url);
+        return { error: 'Unable to retrieve required deployment artifact for ServiceTemplate with URL: ', url };
+      }
+      console.log(element.id);
+      // load the DA as blob and add in separate folder into overall zip
+      let folder = requiredProgramsZip.folder(element.id);
+      let da = await files[0].async('blob');
+      await folder.loadAsync(da);
+    }
+
+    // script task need an inline script which can be exported
+    if (element.$type === 'bpmn:ScriptTask') {
+      if (element.script === undefined || element.scriptFormat === undefined) {
+        console.log('No inline script defined for ScriptTask: ', element.id);
+        return { error: 'No inline script defined for ScriptTask: ' + element.id };
+      }
+
+      // create folder for the script
+      let folder = requiredProgramsZip.folder(element.id);
+
+      // add file depending on the used language
+      switch (element.scriptFormat) {
+      case 'groovy':
+        folder.file(element.id + '.groovy', element.script);
+        break;
+      case 'javascript':
+        folder.file(element.id + '.js', element.script);
+        break;
+      default:
+        console.log('Inline script for ScriptTask %s has invalid scriptFormat: %s', element.id, element.scriptFormat);
+        return { error: 'Inline script for ScriptTask ' + element.id + ' has invalid scriptFormat: ' + element.scriptFormat };
+      }
+    }
+  }}
+
+  return { programs: await requiredProgramsZip.generateAsync({ type: 'blob' }) };
+}
+
 /**
  * Search for invalid modeling construct for AWS Runtime within the given root element and return the first found construct
  *

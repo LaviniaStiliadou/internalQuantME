@@ -19,7 +19,12 @@ import RewriteModal from './RewriteModal';
 import { getQiskitRuntimeProgramDeploymentModel } from './runtimes/QiskitRuntimeHandler';
 import { getAWSRuntimeProgramDeploymentModel } from './runtimes/AwsRuntimeHandler';
 import { rewriteWorkflow } from './WorkflowRewriter';
-
+import { getInvalidModelingConstruct, getRequiredProgramsGroup, getTaskOrder } from './runtimes/RuntimeHandlerUtils';
+import { startReplacementProcess } from '../quantme/replacement/QuantMETransformator';
+import { createModelerFromXml } from '../quantme/Utilities';
+import {
+  getRootProcess, performAjax
+} from 'client/src/app/quantme/utilities/Utilities';
 const defaultState = {
   adaptationOpen: false
 };
@@ -103,7 +108,166 @@ export default class AdaptationPlugin extends PureComponent {
 
   async handleRewriteClosed(result) {
     if(result && result.hasOwnProperty('policyEvaluation')){
-      console.log(result.policyEvaluation);
+      console.log(result)
+      let selectedCandidate = result.candidates[result.rewriteCandidateId];
+      console.log(selectedCandidate);
+      let group;
+      for(let i= 0; i< selectedCandidate.currentElement.$parent.artifacts.length; i++){
+        
+        let currentGroupElement = selectedCandidate.currentElement.$parent.artifacts[i].candidate;
+        //.currentElement.id;
+        console.log(currentGroupElement);
+        if (currentGroupElement != undefined) {
+          currentGroupElement = selectedCandidate.currentElement.$parent.artifacts[i].candidate.currentElement.id
+          if(currentGroupElement === selectedCandidate.currentElement.id){
+             group = selectedCandidate.currentElement.$parent.artifacts[i];
+             const elementRegistry = this.modeler.get('elementRegistry');
+            console.log(elementRegistry);
+            const element = elementRegistry.get(group.id);
+            group = element;
+          }
+        }
+      }
+      console.log(group);
+      let moneyPolicy = '';
+      let privacyPolicy = '';
+      let customEnvironmentPolicy = '';
+      let availabilityPolicy = '';
+      let policyRequest = '';
+
+      // extract workflow XML
+      function exportXmlWrapper() {
+        return new Promise((resolve) => {
+          group.candidate.modeler.saveXML((err, successResponse) => {
+            resolve(successResponse);
+          });
+        });
+      }
+
+      let xml = await exportXmlWrapper();
+
+      console.log(xml);
+      // transform QuantME tasks within candidate
+      let transformationResult = await startReplacementProcess(xml, await this.quantME.getQRMs(), this.modeler.config, group.candidate);
+      if (transformationResult.status === 'failed') {
+        console.log('Unable to transform QuantME tasks within the candidates!');
+        return { error: 'Unable to transform QuantME tasks within the candidates. Please provide valid QRMs!' };
+      }
+
+      // import transformed XML to the modeler
+      let modeler = await createModelerFromXml(transformationResult.xml);
+      // check if all service tasks have either a deployment model attached and all script tasks provide the code inline and retrieve the files
+      let rootElement = getRootProcess(modeler.getDefinitions());
+      let requiredPrograms = await getRequiredProgramsGroup(rootElement, this.modeler.config.wineryEndpoint, group);
+      if (requiredPrograms.error !== undefined) {
+        return { error: requiredPrograms.error };
+      }
+      for (let i = 0; i < group.attachers.length; i++) {
+        let boundaryEvent = group.attachers[i];
+        if (boundaryEvent.type === 'quantme:Policy') {
+
+        }
+        if (boundaryEvent.type === 'quantme:MoneyPolicy') {
+          let thresholdValue = boundaryEvent.businessObject.threshold;
+          let weightValue = boundaryEvent.businessObject.weight || 0;
+          moneyPolicy = {
+            "moneyPolicy": {
+              "threshold": thresholdValue,
+              "weight": weightValue
+            }
+          };
+
+        }
+        if (boundaryEvent.type === 'quantme:PrivacyPolicy') {
+          let weightValue = boundaryEvent.businessObject.weight || 0;
+          let dataRetentionValue = boundaryEvent.businessObject.dataRetention;
+          let thirdPartyQPUValue = boundaryEvent.businessObject.thirdPartyQPU;
+          privacyPolicy = {
+            "privacyPolicy": {
+              "dataRetention": dataRetentionValue,
+              "thirdPartyQPU": thirdPartyQPUValue,
+              "weight": weightValue
+            }
+          };
+
+        }
+        if (boundaryEvent.type === 'quantme:AvailabilityPolicy') {
+          let weightValue = boundaryEvent.businessObject.weight || 0;
+          let devicesValue = boundaryEvent.businessObject.devices;
+          let simulatorsAllowed = boundaryEvent.businessObject.simulatorsAllowed || false;
+          availabilityPolicy = {
+            "availabilityPolicy": {
+              "devices": devicesValue,
+              "simulatorsAllowed": simulatorsAllowed,
+              "weight": weightValue
+            }
+          };
+
+
+        }
+        if (boundaryEvent.type === 'quantme:CustomEnvironmentPolicy') {
+          let weightValue = boundaryEvent.businessObject.weight || 0;
+          customEnvironmentPolicy = {
+            "customEnvironmentPolicy": {
+              "weight": weightValue
+            }
+          };
+
+        }
+
+      }
+      let ibmq_token = {
+        "ibmqToken": this.modeler.config.ibmqToken
+      };
+      let aws_keys = {
+        "awsKeys": {
+          "awsSecretAccessKey": this.modeler.config.awsSecretAccessKey,
+          "awsAccessKey": this.modeler.config.awsAccessKey
+        }
+      };
+      policyRequest = Object.assign({}, availabilityPolicy, customEnvironmentPolicy, moneyPolicy, privacyPolicy, ibmq_token, aws_keys);
+      console.log(policyRequest);
+      const fd = new FormData();
+      fd.append('moneyPolicy', moneyPolicy);
+      fd.append('availabilityPolicy', availabilityPolicy);
+      fd.append('privacyPolicy', privacyPolicy);
+      fd.append('customEnvironmentPolicy', customEnvironmentPolicy);
+      fd.append('requiredPrograms', requiredPrograms.programs);
+      fd.append('ibmToken', ibmq_token);
+      fd.append('awsKeys', aws_keys);
+      let r = await performAjax(this.modeler.config.policyHandlerEndpoint + '/policy-handler/api/v1.0/design-time-evaluation-hybrid-runtime', fd); 
+      console.log(r)
+      /** 
+      fetch(this.modeler.config.policyHandlerEndpoint + '/policy-handler/api/v1.0/detect', {
+        method: 'POST', // Replace with the appropriate HTTP method
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(policyRequest)
+      })
+      .then(response => {
+        console.log('Data sent:', response);
+      })
+      .catch(error => {
+        console.error('Error:', error);
+      }); 
+
+      fetch(this.modeler.config.policyHandlerEndpoint + '/policy-handler/api/v1.0/design-time-evaluation-hybrid-runtime', {
+        method: 'POST', // Replace with the appropriate HTTP method
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(policyRequest)
+      })
+      .then(response => {
+        console.log('Data sent:', response);
+      })
+      .catch(error => {
+        console.error('Error:', error);
+      });
+      //console.log(r);
+      //console.log(result.policyEvaluation);
+      */
       return;
     }else{
     // handle click on 'Rewrite Workflow' button
